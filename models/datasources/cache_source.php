@@ -17,8 +17,7 @@ App::import('Lib', 'Folder');
  * CacheSource datasource
  *
  * Gets find results from cache instead of the original datasource. The cache
- * is stored under CACHE/find_results/{model alias}. Each model has separate
- * cache so you can easily clear it on a per-model basis.
+ * is stored under CACHE/cacher.
  *
  * @package       cacher
  * @subpackage    cacher.models.datasources
@@ -38,13 +37,6 @@ class CacheSource extends DataSource {
  * @var string
  */
 	var $cacheConfig = 'CacherResults';
-
-/**
- * The name of the cache's map configuration for this datasource instance
- *
- * @var string
- */
-	var $cacheMapConfig = 'CacherMap';
 
 /**
  * Constructor
@@ -68,7 +60,7 @@ class CacheSource extends DataSource {
 		$settings = array(
 			'engine' => 'File',
 			'duration' => '+6 hours',
-			'path' => CACHE.'cacher',
+			'path' => CACHE.'cacher'.DS,
 			'prefix' => 'cacher_'
 		);
 		if (isset($this->config['config']) && Cache::isInitialized($this->config['config'])) {
@@ -78,18 +70,8 @@ class CacheSource extends DataSource {
 
 		$this->source =& ConnectionManager::getDataSource($this->config['original']);
 
-		new Folder(CACHE.'cacher', true, 0775);
+		new Folder($settings['path'], true, 0775);
 		Cache::config($this->cacheConfig, $settings);
-		Cache::config($this->cacheMapConfig, array(
-			'engine' => 'File',
-			'duration' => '+10 years',
-			'path' => CACHE.'cacher',
-			'prefix' => 'cacher_'
-		));
-		$map = Cache::read('map', $this->cacheMapConfig);
-		if ($map === false) {
-			Cache::write('map', array(), $this->cacheMapConfig);
-		}
 	}
 
 /**
@@ -107,22 +89,6 @@ class CacheSource extends DataSource {
 		if ($results === false) {
 			$results = $this->source->read($Model, $queryData);
 			Cache::write($key, $results, $this->cacheConfig);
-			$map = Cache::read('map', $this->cacheMapConfig);
-			$sourceName = $this->config['original'];
-			if (!isset($map[$sourceName])) {
-				$map[$sourceName] = array();
-			}
-			if (!isset($map[$sourceName][$Model->alias])) {
-				$map[$sourceName][$Model->alias] = array();
-			}
-			$map = Set::merge($map, array(
-				$sourceName => array(
-					$Model->alias => array(
-						$key
-					)
-				)
-			));
-			Cache::write('map', $map, $this->cacheMapConfig);
 		}
 		$this->_resetSource($Model);
 		return $results;
@@ -136,22 +102,21 @@ class CacheSource extends DataSource {
  * @param Model $Model The model to clear the cache for
  */
 	function clearModelCache($Model, $query = null) {
-		$map = Cache::read('map', $this->cacheMapConfig);
+		$settings = Cache::config($this->cacheConfig);
+		$path = $settings['settings']['path'];
+		$prefix = $settings['settings']['prefix'];
 		$sourceName = ConnectionManager::getSourceName($this->source);
-		if (isset($map[$sourceName]) && isset($map[$sourceName][$Model->alias])) {
-			foreach ($map[$sourceName][$Model->alias] as $key => $modelCacheKey) {
-				if ($query !== null) {
-					$findKey = $this->_key($Model, $query);
-					if ($modelCacheKey == $findKey) {
-						Cache::delete($modelCacheKey, $this->cacheConfig);
-						unset($map[$sourceName][$Model->alias][$key]);
-					}
-				} else {
-					Cache::delete($modelCacheKey, $this->cacheConfig);
-					unset($map[$sourceName][$Model->alias][$key]);
-				}
+
+		if ($query !== null) {
+			$findKey = $this->_key($Model, $query);
+			return Cache::delete($findKey, $this->cacheConfig);
+		}
+
+		$files = glob($path.DS.$prefix.$sourceName.'_'.Inflector::underscore($Model->alias).'_*');
+		if (is_array($files) && count($files) > 0) {
+			foreach ($files AS $file) {
+				unlink($file);
 			}
-			Cache::write('map', $map, $this->cacheMapConfig);
 		}
 		return true;
 	}

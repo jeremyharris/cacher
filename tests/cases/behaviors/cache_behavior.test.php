@@ -20,7 +20,6 @@ class CacheBehaviorTestCase extends CakeTestCase {
 	function endTest() {
 		$ds = ConnectionManager::getDataSource('cache');
 		Cache::clear(false, $ds->cacheConfig);
-		Cache::clear(false, $ds->cacheMapConfig);
 		Configure::write('Cache.disable', $this->_cacheDisable);
 		unset($this->CacheData);
 		ClassRegistry::flush();
@@ -186,6 +185,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 	}
 
 	function testClearCache() {
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array('aut' => true));
 		$results = $this->CacheData->find('all', array(
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
@@ -197,22 +197,27 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'Cache behavior'
 		);
 		$this->assertEqual($results, $expected);
-
-		// test clearing 1 cached query
+		
 		$ds = ConnectionManager::getDataSource('cache');
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '123')));
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '456')));
-		$results = Cache::read('map', $ds->cacheMapConfig);
-		$this->assertEqual(count($results['test_suite']['CacheData']), 3);
+
+		$settings = Cache::config($ds->cacheConfig);
+		$results = glob($settings['settings']['path'].DS.$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 3);
+
+		// test clearing 1 cached query
 		$results = $this->CacheData->clearCache(array('conditions' => array('CacheData.name LIKE' => '456')));
 		$this->assertTrue($results);
-		$results = Cache::read('map', $ds->cacheMapConfig);
-		$this->assertEqual(count($results['test_suite']['CacheData']), 2);
+		$settings = Cache::config($ds->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 2);
 
 		// test clearing all
 		$this->assertTrue($this->CacheData->clearCache());
-		$results = Cache::read('map', $ds->cacheMapConfig);
-		$this->assertEqual(count($results['test_suite']['CacheData']), 0);
+		$settings = Cache::config($ds->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 0);
 	}
 
 	function testFind() {

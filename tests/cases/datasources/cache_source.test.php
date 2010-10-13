@@ -21,7 +21,6 @@ class CacheSourceTestCase extends CakeTestCase {
 		}
 		$this->dataSource =& ConnectionManager::getDataSource('cache');
 		Cache::clear(false, $this->dataSource->cacheConfig);
-		Cache::clear(false, $this->dataSource->cacheMapConfig);
 	}
 
 	function endTest() {
@@ -52,15 +51,9 @@ class CacheSourceTestCase extends CakeTestCase {
 		$expected = strtotime('+1 days') - strtotime('now');
 		$this->assertEqual($result, $expected);
 
-		$result = Cache::read('map', $this->dataSource->cacheMapConfig);
-		$expected = array(
-			'test_suite' => array(
-				'CacheData' => array(
-					0 => $key
-				)
-			)
-		);
-		$this->assertEqual($result, $expected);
+		$settings = Cache::config($this->dataSource->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 1);
 
 		$results = Cache::read($key, $this->dataSource->cacheConfig);
 		$results = Set::extract('/CacheData/name', $results);
@@ -70,7 +63,6 @@ class CacheSourceTestCase extends CakeTestCase {
 		);
 		$this->assertEqual($results, $expected);
 
-		Cache::clear(false, $this->dataSource->cacheMapConfig);
 		Cache::clear(false, $this->dataSource->cacheConfig);
 	}
 
@@ -104,11 +96,11 @@ class CacheSourceTestCase extends CakeTestCase {
 		$results = $this->dataSource->read($this->CacheData, $conditions);
 		$this->assertEqual(Set::extract('/CacheData/name', $results), array('A Cached Thing'));
 
-		$results = Cache::read('map', $this->dataSource->cacheMapConfig);
-		$this->assertEqual(count($results['test_suite']['CacheData']), 2);
+		$settings = Cache::config($this->dataSource->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 2);
 
 		Cache::clear(false, $this->dataSource->cacheConfig);
-		Cache::clear(false, $this->dataSource->cacheMapConfig);
 	}
 
 	function testClearModelCache() {
@@ -126,12 +118,22 @@ class CacheSourceTestCase extends CakeTestCase {
 		);
 		$results = $this->dataSource->read($this->CacheData, $moreConditions);
 
-		$results = Cache::read('map', $this->dataSource->cacheMapConfig);
-		$this->assertEqual(count($results['test_suite']['CacheData']), 2);
+		$settings = Cache::config($this->dataSource->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 2);
 
+		// test that clearing only clears this model's data
+		$this->CacheData->alias = 'DifferentModel';
 		$this->dataSource->clearModelCache($this->CacheData);
-		$results = Cache::read('map', $this->dataSource->cacheMapConfig);
-		$this->assertEqual(count($results['test_suite']['CacheData']), 0);
+		$settings = Cache::config($this->dataSource->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 2);
+
+		$this->CacheData->alias = 'CacheData';
+		$this->dataSource->clearModelCache($this->CacheData);
+		$settings = Cache::config($this->dataSource->cacheConfig);
+		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
+		$this->assertEqual(count($results), 0);
 	}
 
 	function testHash() {
