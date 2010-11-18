@@ -142,9 +142,6 @@ class CacheBehavior extends ModelBehavior {
  * @return boolean
  */
 	function clearCache(&$Model, $queryData = null) {
-		if (!$this->cacheResults) {
-			return;
-		}
 		if ($queryData !== null) {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
