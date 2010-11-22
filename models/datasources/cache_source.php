@@ -84,13 +84,13 @@ class CacheSource extends DataSource {
  * @see DataSource::read()
  */
 	function read($Model, $queryData = array()) {
+		$this->_resetSource($Model);
 		$key = $this->_key($Model, $queryData);
 		$results = Cache::read($key, $this->cacheConfig);
 		if ($results === false) {
 			$results = $this->source->read($Model, $queryData);
 			Cache::write($key, $results, $this->cacheConfig);
-		}
-		$this->_resetSource($Model);
+		}		
 		return $results;
 	}
 
@@ -149,7 +149,7 @@ class CacheSource extends DataSource {
  * @return boolean
  */
 	function _resetSource($Model) {
-		return $Model->setDataSource($sourceName = ConnectionManager::getSourceName($this->source));
+		return $Model->setDataSource(ConnectionManager::getSourceName($this->source));
 	}
 
 }
