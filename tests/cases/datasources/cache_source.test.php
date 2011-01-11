@@ -7,7 +7,7 @@ if (!class_exists('Cache')) {
 
 class CacheSourceTestCase extends CakeTestCase {
 
-	var $fixtures = array('plugin.cacher.cache_data');
+	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
 
 	function startTest() {
 		$this->_cacheDisable = Configure::read('Cache.disable');		
@@ -28,6 +28,44 @@ class CacheSourceTestCase extends CakeTestCase {
 		unset($this->CacheData);
 		unset($this->dataSource);
 		ClassRegistry::flush();
+	}
+
+	function testMultipleDbConfigs() {
+		$testSuite = ConnectionManager::getDataSource('test_suite');
+		ConnectionManager::create('test1', $testSuite->config);
+		ConnectionManager::create('test2', $testSuite->config);
+
+		$CacheData1 = ClassRegistry::init('CacheData');
+		$CacheData1->_useDbConfig = 'test1';
+		$CacheData1->useDbConfig = 'cache';
+		$CacheData1->alias = 'CacheData1';
+		$CacheData2 = ClassRegistry::init('CacheData2');
+		$CacheData2->_useDbConfig = 'test2';
+		$CacheData2->useDbConfig = 'cache';
+		$CacheData2->alias = 'CacheData2';
+
+		$conditions = array('conditions' => array('CacheData1.id' => 1));
+		$this->dataSource->read($CacheData1, $conditions);
+		$key = $this->dataSource->_key($CacheData1, $conditions);
+		$this->assertTrue(strpos($key, 'test1') >= 0);
+		$this->assertTrue(Cache::read($key, $this->dataSource->cacheConfig));
+		$this->assertEqual($CacheData1->useDbConfig, 'test1');
+
+		// read from ds1, ds2, then read cache
+		$conditions = array('conditions' => array('CacheData1.id' => 1));
+		$this->dataSource->read($CacheData1, $conditions);
+		$key1 = $this->dataSource->_key($CacheData1, $conditions);		
+		$conditions = array('conditions' => array('CacheData2.id' => 1));
+		$this->dataSource->read($CacheData2, $conditions);
+		$key2 = $this->dataSource->_key($CacheData2, $conditions);
+		// test that it wrote to the correct cache key (based on the datasource)
+		$this->assertTrue(strpos($key1, 'test1') >= 0);
+		$this->assertTrue(strpos($key2, 'test2') >= 0);
+		$this->assertTrue(Cache::read($key1, $this->dataSource->cacheConfig));
+		$this->assertTrue(Cache::read($key2, $this->dataSource->cacheConfig));
+		// and make sure it reset the datasource
+		$this->assertEqual($CacheData1->useDbConfig, 'test1');
+		$this->assertEqual($CacheData2->useDbConfig, 'test2');
 	}
 
 	function testUseExistingConfig() {

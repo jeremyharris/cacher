@@ -78,4 +78,4 @@ You can always disable Cacher by using `Behavior::detach()` or
 ## Todo
 
 * I'd like to add other caching functionality to make it more all-in-one
-* Need to add tests that show it works with any DataSource
+* Would like to make the Cache datasource a reuseable, standalone datasource

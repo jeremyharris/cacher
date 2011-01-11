@@ -149,6 +149,9 @@ class CacheSource extends DataSource {
  * @return boolean
  */
 	function _resetSource($Model) {
+		if (isset($Model->_useDbConfig)) {
+			$this->source =& ConnectionManager::getDataSource($Model->_useDbConfig);
+		}
 		return $Model->setDataSource(ConnectionManager::getSourceName($this->source));
 	}
 
