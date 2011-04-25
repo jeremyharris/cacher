@@ -97,7 +97,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->assertEqual($results, $expected);
 	}
 
-	function testNoAuto() {
+	function testAuto() {
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
 			'auto' => false
 		));
@@ -125,6 +125,22 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$expected = array(
 			'Cache behavior'
 		);
+		$this->assertEqual($results, $expected);
+		
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
+			'auto' => true
+		));
+		
+		// test that it's not pulling from the cache
+		$this->CacheData->delete(2);
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			),
+			'cache' => false
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array();
 		$this->assertEqual($results, $expected);
 	}
 

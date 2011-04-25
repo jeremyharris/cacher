@@ -101,7 +101,7 @@ class CacheBehavior extends ModelBehavior {
 			}			
 			unset($queryData['cache']);
 		}
-		$this->cacheResults = $this->settings[$Model->alias]['auto'] || $this->cacheResults;
+		$this->cacheResults = $this->cacheResults || $this->settings[$Model->alias]['auto'];
 		
 		if ($this->cacheResults) {
 			$Model->setDataSource('cache');
