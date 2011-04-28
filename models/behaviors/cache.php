@@ -12,7 +12,7 @@
  * Cache Behavior
  *
  * Auto-caches find results into the cache. Running an exact find again will
- * pull from the cache. Requires the CacheSource datasource.
+ * pull from the cache. Requires the CacherSource datasource.
  *
  * @package       cacher
  * @subpackage    cacher.models.behaviors
@@ -57,12 +57,12 @@ class CacheBehavior extends ModelBehavior {
 		$settings = array_merge($_defaults, $config);
 
 		$Model->_useDbConfig = $Model->useDbConfig;
-		if (!in_array('cache', ConnectionManager::sourceList())) {
+		if (!in_array('cacher', ConnectionManager::sourceList())) {
 			$settings['original'] = $Model->useDbConfig;
 			$settings['datasource'] = 'Cacher.cache';
-			ConnectionManager::create('cache', $settings);
+			ConnectionManager::create('cacher', $settings);
 		} else {
-			$ds =& ConnectionManager::getDataSource('cache');
+			$ds =& ConnectionManager::getDataSource('cacher');
 			$ds->config = array_merge($ds->config, $settings);
 		}
 
@@ -75,8 +75,8 @@ class CacheBehavior extends ModelBehavior {
 /**
  * Intercepts find to use the caching datasource instead
  *
- * If `$queryData['cache']` is true, it will cache based on the setup settings
- * If `$queryData['cache']` is a duration, it will cache using the setup settings
+ * If `$queryData['cacher']` is true, it will cache based on the setup settings
+ * If `$queryData['cacher']` is a duration, it will cache using the setup settings
  * and the new duration.
  *
  * @param Model $Model The calling model
@@ -84,20 +84,20 @@ class CacheBehavior extends ModelBehavior {
  */
 	function beforeFind(&$Model, $queryData) {
 		$this->cacheResults = false;
-		if (isset($queryData['cache'])) {
-			if (is_string($queryData['cache'])) {
-				$ds = ConnectionManager::getDataSource('cache');
-				Cache::config($this->settings[$Model->alias]['config'], array('duration' => $queryData['cache']));
+		if (isset($queryData['cacher'])) {
+			if (is_string($queryData['cacher'])) {
+				$ds = ConnectionManager::getDataSource('cacher');
+				Cache::config($this->settings[$Model->alias]['config'], array('duration' => $queryData['cacher']));
 				$this->cacheResults = true;
 			} else {
-				$this->cacheResults = (boolean)$queryData['cache'];
+				$this->cacheResults = (boolean)$queryData['cacher'];
 			}			
-			unset($queryData['cache']);
+			unset($queryData['cacher']);
 		}
 		$this->cacheResults = $this->cacheResults || $this->settings[$Model->alias]['auto'];
 		
 		if ($this->cacheResults) {
-			$Model->setDataSource('cache');
+			$Model->setDataSource('cacher');
 		}
 		return $queryData;
 	}
@@ -139,7 +139,7 @@ class CacheBehavior extends ModelBehavior {
 		}
 		$cache = Cache::getInstance();
 		$_originalCacheConfig = $cache->__name;
-		$ds = ConnectionManager::getDataSource('cache');
+		$ds = ConnectionManager::getDataSource('cacher');
 		$success = $ds->clearModelCache($Model, $queryData);
 		Cache::config($_originalCacheConfig);
 		return $success;

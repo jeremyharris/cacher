@@ -32,24 +32,24 @@ If you want to use a different configuration, just pass it in the 'config' key.
 
 ### Using Cacher with `Model::find()`, `Controller::paginate()`, etc.
 
-If you set auto to false, you can pass a `'cache'` key in your query that is
+If you set auto to false, you can pass a `'cacher'` key in your query that is
 either `true` to cache the results, `false` to not cache it, or a valid
 `strtotime()` string to set a duration for that specific call.
 
     // cache the results of this query for a day
     $this->Post->find('all', array(
 		  'conditions' => array('Post.name LIKE' => '%awesome%'),
-		  'cache' => '+1 day'
+		  'cacher' => '+1 day'
     ));
     // don't cache the results of this query at all
     $this->Post->find('all', array(
 		  'conditions' => array('Post.name LIKE' => '%lame%'),
-		  'cache' => false
+		  'cacher' => false
     ));
     // cache using the default settings even if auto = false
     $this->Post->find('all', array(
 		  'conditions' => array('Post.name LIKE' => '%okay i guess%'),
-		  'cache' => true
+		  'cacher' => true
     ));
 
 ## How it works

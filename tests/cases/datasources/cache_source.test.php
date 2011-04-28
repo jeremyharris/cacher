@@ -14,13 +14,13 @@ class CacheSourceTestCase extends CakeTestCase {
 		$this->_originalCacheConfig = Cache::config('default');
 		Configure::write('Cache.disable', false);
 		$this->CacheData =& ClassRegistry::init('CacheData');
-		if (!in_array('cache', ConnectionManager::sourceList())) {
-			 ConnectionManager::create('cache', array(
+		if (!in_array('cacher', ConnectionManager::sourceList())) {
+			 ConnectionManager::create('cacher', array(
 				'original' => $this->CacheData->useDbConfig,
 				'datasource' => 'Cacher.cache'
 			));
 		}
-		$this->dataSource =& ConnectionManager::getDataSource('cache');
+		$this->dataSource =& ConnectionManager::getDataSource('cacher');
 		// set up default cache config for tests
 		Cache::config('default', array(
 			'engine' => 'File',
@@ -47,11 +47,11 @@ class CacheSourceTestCase extends CakeTestCase {
 
 		$CacheData1 = ClassRegistry::init('CacheData');
 		$CacheData1->_useDbConfig = 'test1';
-		$CacheData1->useDbConfig = 'cache';
+		$CacheData1->useDbConfig = 'cacher';
 		$CacheData1->alias = 'CacheData1';
 		$CacheData2 = ClassRegistry::init('CacheData2');
 		$CacheData2->_useDbConfig = 'test2';
-		$CacheData2->useDbConfig = 'cache';
+		$CacheData2->useDbConfig = 'cacher';
 		$CacheData2->alias = 'CacheData2';
 
 		$conditions = array('conditions' => array('CacheData1.id' => 1));

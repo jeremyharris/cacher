@@ -16,7 +16,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		Configure::write('Cache.disable', false);
 		$this->CacheData =& ClassRegistry::init('CacheData');
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'auto' => true));
-		$ds = ConnectionManager::getDataSource('cache');
+		$ds = ConnectionManager::getDataSource('cacher');
 		// set up default cache config for tests
 		Cache::config('default', array(
 			'engine' => 'File',
@@ -44,7 +44,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
 			),
-			'cache' => '+42 weeks'
+			'cacher' => '+42 weeks'
 		));
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array(
@@ -59,7 +59,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
 			),
-			'cache' => true
+			'cacher' => true
 		));
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array(
@@ -68,7 +68,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		);
 		$this->assertEqual($results, $expected);
 
-		$ds = ConnectionManager::getDataSource('cache');
+		$ds = ConnectionManager::getDataSource('cacher');
 		$result = Cache::config('default');
 		$this->assertEqual($result['settings']['duration'], strtotime('+42weeks') - strtotime('now'));
 	}
@@ -82,7 +82,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
 			),
-			'cache' => true
+			'cacher' => true
 		));
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array(
@@ -97,7 +97,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
 			),
-			'cache' => true
+			'cacher' => true
 		));
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array(
@@ -147,7 +147,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
 			),
-			'cache' => false
+			'cacher' => false
 		));
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array();
@@ -192,7 +192,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		);
 		$this->assertEqual($results, $expected);
 		
-		$ds = ConnectionManager::getDataSource('cache');
+		$ds = ConnectionManager::getDataSource('cacher');
 		$this->assertEqual($ds->config['config'], 'cacheTest');
 		
 		$map = Cache::read('map', 'cacheTest');
@@ -244,7 +244,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		);
 		$this->assertEqual($results, $expected);
 		
-		$ds = ConnectionManager::getDataSource('cache');
+		$ds = ConnectionManager::getDataSource('cacher');
 		$this->assertEqual($ds->config['config'], 'cacherMemcache');
 		
 		$map = Cache::read('map', 'cacherMemcache');
@@ -278,7 +278,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 
 	function testSetup() {
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('duration' => '+1 days'));
-		$this->assertTrue(in_array('cache', ConnectionManager::sourceList()));
+		$this->assertTrue(in_array('cacher', ConnectionManager::sourceList()));
 
 		$this->assertEqual($this->CacheData->_useDbConfig, 'test_suite');
 		$this->assertEqual($this->CacheData->useDbConfig, 'test_suite');
@@ -298,7 +298,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		);
 		$this->assertEqual($results, $expected);
 		
-		$ds = ConnectionManager::getDataSource('cache');
+		$ds = ConnectionManager::getDataSource('cacher');
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '123')));
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '456')));
 
