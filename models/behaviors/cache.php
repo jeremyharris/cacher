@@ -34,22 +34,14 @@ class CacheBehavior extends ModelBehavior {
 	var $settings;
 
 /**
- * The original cache configuration
- *
- * @var string
- */
-	var $_originalCacheConfig = null;
-
-/**
  * Sets up a connection using passed settings
  *
  * ### Config
- * - `config` The name of an existing Cache configuration to duplicate
+ * - `config` The name of an existing Cache configuration to use. Default is 'default'
  * - `clearOnSave` Whether or not to delete the cache on saves
  * - `clearOnDelete` Whether or not to delete the cache on deletes
  * - `auto` Automatically cache or look for `'cache'` in the find conditions
  *		where the key is `true` or a duration
- * - any options taken by Cache::config() will be used if `config` is not defined
  *
  * @param Model $Model The calling model
  * @param array $config Configuration settings
@@ -57,9 +49,7 @@ class CacheBehavior extends ModelBehavior {
  */
 	function setup(&$Model, $config = array()) {
 		$_defaults = array(
-			'config' => null,
-			'engine' => 'File',
-			'duration' => '+6 hours',
+			'config' => 'default',
 			'clearOnDelete' => true,
 			'clearOnSave' => true,
 			'auto' => false
@@ -94,7 +84,7 @@ class CacheBehavior extends ModelBehavior {
 		if (isset($queryData['cache'])) {
 			if (is_string($queryData['cache'])) {
 				$ds = ConnectionManager::getDataSource('cache');
-				Cache::config($ds->cacheConfig, array('duration' => $queryData['cache']));
+				Cache::config($this->settings[$Model->alias]['config'], array('duration' => $queryData['cache']));
 				$this->cacheResults = true;
 			} else {
 				$this->cacheResults = (boolean)$queryData['cache'];
@@ -145,10 +135,10 @@ class CacheBehavior extends ModelBehavior {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
 		$cache = Cache::getInstance();
-		$this->_originalCacheConfig = $cache->__name;
+		$_originalCacheConfig = $cache->__name;
 		$ds = ConnectionManager::getDataSource('cache');
 		$success = $ds->clearModelCache($Model, $queryData);
-		Cache::config($this->_originalCacheConfig);
+		Cache::config($_originalCacheConfig);
 		return $success;
 	}
 

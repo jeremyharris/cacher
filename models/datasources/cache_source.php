@@ -32,13 +32,6 @@ class CacheSource extends DataSource {
 	var $source = null;
 
 /**
- * The name of the cache configuration for this datasource instance
- *
- * @var string
- */
-	var $cacheConfig = 'CacherResults';
-
-/**
  * Constructor
  *
  * Sets default options if none are passed when the datasource is created and
@@ -47,31 +40,22 @@ class CacheSource extends DataSource {
  *
  * ### Extra config settings
  * - `original` The name of the original datasource, i.e., 'default' (required)
- * - `config` The name of the Cache configuration to duplicate (optional)
+ * - `config` The name of the Cache configuration to use. Uses 'default' by default
  * - other settings required by DataSource...
  *
  * @param array $config Configure options
  */
 	function __construct($config = array()) {
+		$config = array_merge(array('config' => 'default'), $config);
 		parent::__construct($config);
 		if (!isset($this->config['original'])) {
 			trigger_error('Cacher.CacheSource::__construct() :: Missing name of original datasource', E_USER_WARNING);
 		}
-		$settings = array(
-			'engine' => 'File',
-			'duration' => '+6 hours',
-			'path' => CACHE.'cacher'.DS,
-			'prefix' => 'cacher_'
-		);
-		if (isset($this->config['config']) && Cache::isInitialized($this->config['config'])) {
-			$_existingCache = Cache::config($this->config['config']);
-			$settings = array_merge($settings, $_existingCache['settings']);
+		if (!Cache::isInitialized($this->config['config'])) {
+			trigger_error('Cacher.CacheSource::__construct() :: Cache config '.$this->config['config'].' not configured.', E_USER_WARNING);
 		}
 
 		$this->source =& ConnectionManager::getDataSource($this->config['original']);
-
-		new Folder($settings['path'], true, 0775);
-		Cache::config($this->cacheConfig, $settings);
 	}
 
 /**
@@ -86,10 +70,10 @@ class CacheSource extends DataSource {
 	function read($Model, $queryData = array()) {
 		$this->_resetSource($Model);
 		$key = $this->_key($Model, $queryData);
-		$results = Cache::read($key, $this->cacheConfig);
+		$results = Cache::read($key, $this->config['config']);
 		if ($results === false) {
 			$results = $this->source->read($Model, $queryData);
-			Cache::write($key, $results, $this->cacheConfig);
+			Cache::write($key, $results, $this->config['config']);
 		}		
 		return $results;
 	}
@@ -102,14 +86,14 @@ class CacheSource extends DataSource {
  * @param Model $Model The model to clear the cache for
  */
 	function clearModelCache($Model, $query = null) {
-		$settings = Cache::config($this->cacheConfig);
+		$settings = Cache::config($this->config['config']);
 		$path = $settings['settings']['path'];
 		$prefix = $settings['settings']['prefix'];
 		$sourceName = ConnectionManager::getSourceName($this->source);
 
 		if ($query !== null) {
 			$findKey = $this->_key($Model, $query);
-			return Cache::delete($findKey, $this->cacheConfig);
+			return Cache::delete($findKey, $this->config['config']);
 		}
 
 		$files = glob($path.DS.$prefix.$sourceName.'_'.Inflector::underscore($Model->alias).'_*');
