@@ -74,6 +74,7 @@ class CacheSource extends DataSource {
 		if ($results === false) {
 			$results = $this->source->read($Model, $queryData);
 			Cache::write($key, $results, $this->config['config']);
+			$this->_map($Model, $key);
 		}		
 		return $results;
 	}
@@ -86,23 +87,26 @@ class CacheSource extends DataSource {
  * @param Model $Model The model to clear the cache for
  */
 	function clearModelCache($Model, $query = null) {
-		$settings = Cache::config($this->config['config']);
-		$path = $settings['settings']['path'];
-		$prefix = $settings['settings']['prefix'];
-		$sourceName = ConnectionManager::getSourceName($this->source);
-
+		$map = Cache::read('map', $this->config['config']);
+		
+		$keys = array();
 		if ($query !== null) {
-			$findKey = $this->_key($Model, $query);
-			return Cache::delete($findKey, $this->config['config']);
-		}
-
-		$files = glob($path.DS.$prefix.$sourceName.'_'.Inflector::underscore($Model->alias).'_*');
-		if (is_array($files) && count($files) > 0) {
-			foreach ($files AS $file) {
-				unlink($file);
+			$keys = array($this->_key($Model, $query));
+		} else{
+			if (!empty($map[$this->source->configKeyName]) && !empty($map[$this->source->configKeyName][$Model->alias])) {
+				$keys = $map[$this->source->configKeyName][$Model->alias];
 			}
 		}
-		return true;
+		if (empty($keys)) {
+			return;
+		}
+		$map[$this->source->configKeyName][$Model->alias] = array_flip($map[$this->source->configKeyName][$Model->alias]);
+		foreach ($keys as $cacheKey) {
+			Cache::delete($cacheKey, $this->config['config']);
+			unset($map[$this->source->configKeyName][$Model->alias][$cacheKey]);
+		}
+		$map[$this->source->configKeyName][$Model->alias] = array_values(array_flip($map[$this->source->configKeyName][$Model->alias]));
+		Cache::write('map', $map, $this->config['config']);
 	}
 
 /**
@@ -122,8 +126,29 @@ class CacheSource extends DataSource {
 			(array)$query
 		);
 		$queryHash = md5(serialize($query));
-		$sourceName = ConnectionManager::getSourceName($this->source);
+		$sourceName = $this->source->configKeyName;
 		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash;
+	}
+	
+/**
+ * Creates a cache map (used for deleting cache keys or groups)
+ * 
+ * @param Model $Model
+ * @param string $key 
+ */
+	function _map($Model, $key) {
+		$map = Cache::read('map', $this->config['config']);
+		if ($map === false) {
+			$map = array();
+		}
+		$map = Set::merge($map, array(
+			$this->source->configKeyName => array(
+				$Model->alias => array(
+					$key
+				)
+			)
+		));
+		Cache::write('map', $map, $this->config['config']);
 	}
 
 /**

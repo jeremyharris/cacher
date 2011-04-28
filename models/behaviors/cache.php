@@ -61,6 +61,9 @@ class CacheBehavior extends ModelBehavior {
 			$settings['original'] = $Model->useDbConfig;
 			$settings['datasource'] = 'Cacher.cache';
 			ConnectionManager::create('cache', $settings);
+		} else {
+			$ds =& ConnectionManager::getDataSource('cache');
+			$ds->config = array_merge($ds->config, $settings);
 		}
 
 		if (!isset($this->settings[$Model->alias])) {

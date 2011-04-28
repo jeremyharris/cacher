@@ -27,7 +27,8 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		Cache::clear(false, 'default');
 	}
 
-	function endTest() {			
+	function endTest() {
+		Cache::clear(false, 'default');
 		Configure::write('Cache.disable', $this->_cacheDisable);
 		Cache::config('default', $this->_originalCacheConfig['settings']);
 		unset($this->CacheData);
@@ -153,11 +154,16 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->assertEqual($results, $expected);
 	}
 
-	function testUseDifferentCacheEngine() {
-		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
-			'duration' => '+1 days',
+	function testUseDifferentCacheConfig() {
+		Cache::config('cacheTest', array(
 			'engine' => 'File',
-			'clearOnDelete' => false
+			'duration' => '+20 minutes',
+			'path' => CACHE,
+			'prefix' => 'different_file_engine_'
+		));
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
+			'clearOnDelete' => false,
+			'config' => 'cacheTest'
 		));
 
 		$results = $this->CacheData->find('all', array(
@@ -185,6 +191,74 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'Cache behavior'
 		);
 		$this->assertEqual($results, $expected);
+		
+		$ds = ConnectionManager::getDataSource('cache');
+		$this->assertEqual($ds->config['config'], 'cacheTest');
+		
+		$map = Cache::read('map', 'cacheTest');
+		$this->assertTrue($map !== false);
+		$this->assertTrue(isset($map[$ds->source->configKeyName][$this->CacheData->alias][0]));
+		$cache = Cache::read($map[$ds->source->configKeyName][$this->CacheData->alias][0], 'cacheTest');
+		$this->assertTrue($cache !== false);
+		
+		Cache::clear(false, 'cacheTest');
+	}
+	
+	function testUseDifferentCacheEngine() {
+		$this->skipIf(!class_exists('Memcache'), 'Memcache is not installed, skipping test');
+		
+		Cache::config('cacherMemcache', array(
+			'duration' => '+1 days',
+			'engine' => 'Memcache',
+			'prefix' => Inflector::slug(APP_DIR) . '_cacher_test_', 
+		));
+		
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
+			'config' => 'cacherMemcache',
+			'clearOnDelete' => false
+		));
+		
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			)
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'A Cached Thing',
+			'Cache behavior'
+		);
+		$this->assertEqual($results, $expected);
+
+		// test that it's pulling from the cache
+		$this->CacheData->delete(1);
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			)
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'A Cached Thing',
+			'Cache behavior'
+		);
+		$this->assertEqual($results, $expected);
+		
+		$ds = ConnectionManager::getDataSource('cache');
+		$this->assertEqual($ds->config['config'], 'cacherMemcache');
+		
+		$map = Cache::read('map', 'cacherMemcache');
+		$this->assertTrue($map !== false);
+		$this->assertTrue(isset($map[$ds->source->configKeyName][$this->CacheData->alias][0]));
+		$cache = Cache::read($map[$ds->source->configKeyName][$this->CacheData->alias][0], 'cacherMemcache');
+		$this->assertTrue($cache !== false);
+		
+		$this->CacheData->clearCache();
+		
+		$map = Cache::read('map', 'cacherMemcache');
+		$this->assertTrue(empty($map[$ds->source->configKeyName][$this->CacheData->alias]));
+		
+		Cache::drop('cacherMemcache');
 	}
 
 	function testRememberCache() {
@@ -228,22 +302,30 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '123')));
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '456')));
 
-		$settings = Cache::config('default');
-		$results = glob($settings['settings']['path'].DS.$settings['settings']['prefix'].'*');
-		$this->assertEqual(count($results), 3);
+		$map = Cache::read('map', 'default');
+		$results = count($map[$ds->source->configKeyName][$this->CacheData->alias]);
+		$this->assertEqual($results, 3);
+		foreach ($map[$ds->source->configKeyName][$this->CacheData->alias] as $key) {
+			$this->assertTrue(Cache::read($key, 'default') !== false, 'Failed checking key '.$key);
+		}
 
 		// test clearing 1 cached query
-		$results = $this->CacheData->clearCache(array('conditions' => array('CacheData.name LIKE' => '456')));
-		$this->assertTrue($results);
-		$settings = Cache::config('default');
-		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
-		$this->assertEqual(count($results), 2);
+		$this->CacheData->clearCache(array('conditions' => array('CacheData.name LIKE' => '456')));
+		$map = Cache::read('map', 'default');
+		$results = count($map[$ds->source->configKeyName][$this->CacheData->alias]);
+		$this->assertEqual($results, 2);
+		foreach ($map[$ds->source->configKeyName][$this->CacheData->alias] as $key) {
+			$this->assertTrue(Cache::read($key, 'default') !== false, 'Failed checking key '.$key);
+		}
 
 		// test clearing all
-		$this->assertTrue($this->CacheData->clearCache());
-		$settings = Cache::config('default');
-		$results = glob($settings['settings']['path'].$settings['settings']['prefix'].'*');
-		$this->assertEqual(count($results), 0);
+		$this->CacheData->clearCache();
+		$map = Cache::read('map', 'default');
+		$results = count($map[$ds->source->configKeyName][$this->CacheData->alias]);
+		$this->assertEqual($results, 0);
+		foreach ($map[$ds->source->configKeyName][$this->CacheData->alias] as $key) {
+			$this->assertTrue(Cache::read($key, 'default') !== false, 'Failed checking key '.$key);
+		}
 	}
 
 	function testFind() {
