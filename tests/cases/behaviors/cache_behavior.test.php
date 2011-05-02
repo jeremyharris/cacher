@@ -6,6 +6,30 @@ if (!class_exists('Cache')) {
 	require LIBS . 'cache.php';
 }
 
+/**
+ * OtherBehavior to call a datasource function if the Cacher.cache source is
+ * being used
+ */
+class OtherBehavior extends ModelBehavior {
+
+	/**
+	 * Uses the model datasource _after_ it was set to Cacher.cache
+	 * 
+	 * @param Model $Model
+	 * @param array $queryData
+	 * @return string 
+	 */
+	function beforeFind(&$Model, $queryData = array()) {
+		$this->_dbconfig = $Model->useDbConfig;
+		$ds = $Model->getDataSource($this->_dbconfig);
+		$this->_dbfields = $ds->fields($Model);
+		$this->_dbfulltablename = $ds->fullTableName($Model);
+		$queryData['conditions'][$ds->name('CacheData.name LIKE')] = '%thing%';
+		return $queryData;
+	}
+	
+}
+
 class CacheBehaviorTestCase extends CakeTestCase {
 
 	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
@@ -33,6 +57,20 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		Cache::config('default', $this->_originalCacheConfig['settings']);
 		unset($this->CacheData);
 		ClassRegistry::flush();
+	}
+	
+	function testMissingDatasourceMethods() {
+		$this->CacheData->Behaviors->attach('Other');
+		
+		$results = $this->CacheData->find('all');
+		$this->assertEqual($this->CacheData->Behaviors->Other->_dbconfig, 'cacher');
+		$this->assertEqual(count($this->CacheData->Behaviors->Other->_dbfields), 5);
+		$this->assertEqual($this->CacheData->Behaviors->Other->_dbfulltablename, '`cache_datas`');
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'A Cached Thing'
+		);
+		$this->assertEqual($results, $expected);
 	}
 
 	function testChangeDurationOnTheFly() {

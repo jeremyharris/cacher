@@ -59,6 +59,21 @@ class CacheSource extends DataSource {
 	}
 
 /**
+ * Redirects calls to original datasource methods. Needed if the `Cacher.Cache` 
+ * behavior is attached before other behaviors that use the model's datasource methods.
+ * 
+ * @param string $name Original db source function name
+ * @param array $arguments Arguments
+ * @return mixed
+ */
+	function __call($name, $arguments) {
+		foreach ($arguments as &$arg) {
+			$arg =& $arg;
+		}
+		return call_user_func_array(array($this->source, $name), $arguments);
+	}
+
+/**
  * Reads from cache if it exists. If not, it falls back to the original
  * datasource to retrieve the data and cache it for later
  *
