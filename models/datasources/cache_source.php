@@ -48,14 +48,18 @@ class CacheSource extends DataSource {
 	function __construct($config = array()) {
 		$config = array_merge(array('config' => 'default'), $config);
 		parent::__construct($config);
+
+		$this->source =& ConnectionManager::getDataSource($this->config['original']);
+
+      if (Configure::read('Cache.disable') === true) {
+         return;
+      }
 		if (!isset($this->config['original'])) {
 			trigger_error('Cacher.CacheSource::__construct() :: Missing name of original datasource', E_USER_WARNING);
 		}
 		if (!Cache::isInitialized($this->config['config'])) {
 			trigger_error('Cacher.CacheSource::__construct() :: Cache config '.$this->config['config'].' not configured.', E_USER_WARNING);
 		}
-
-		$this->source =& ConnectionManager::getDataSource($this->config['original']);
 	}
 
 /**
