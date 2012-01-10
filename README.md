@@ -8,6 +8,10 @@ Have settings that hardly change? Have a database list of states or something
 that never change but you still want them in the db? Just like caching your
 results? Use Cacher!
 
+## Requirements
+
+* CakePHP 2.0.x (check tags for older versions of CakePHP)
+
 ## Usage
 
     var $actsAs = array(
