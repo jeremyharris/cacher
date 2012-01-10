@@ -54,10 +54,10 @@ class CacheSource extends DataSource {
 			return;
 		}
 		if (!isset($this->config['original'])) {
-			trigger_error('Cacher.CacheSource::__construct() :: Missing name of original datasource', E_USER_WARNING);
+			throw new CakeException('Missing name of original datasource.');
 		}
 		if (!Cache::isInitialized($this->config['config'])) {
-			trigger_error('Cacher.CacheSource::__construct() :: Cache config '.$this->config['config'].' not configured.', E_USER_WARNING);
+			throw new CacheException(sprintf('Missing cache configuration for "%s".', $this->config['config']));
 		}
 
 		$this->source = ConnectionManager::getDataSource($this->config['original']);

@@ -20,9 +20,21 @@ class CacheSourceTestCase extends CakeTestCase {
 
 	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
 
+	function startTest() {
+		Cache::write('Cache.disable', false);
+		// set up default cache config for tests
+		Cache::config('default', array(
+			'engine' => 'File',
+			'duration' => '+6 hours',
+			'prefix' => 'cacher_tests_',
+			'path' => CACHE
+		));
+	}
+	
 	function setUp() {
 		parent::setUp();
-		Configure::write('Cache.disable', false);
+		// set up cache
+		$this->startTest();
 		$this->CacheData = ClassRegistry::init('CacheData');
 		if (!in_array('cacher', ConnectionManager::sourceList())) {
 			 ConnectionManager::create('cacher', array(
@@ -33,25 +45,21 @@ class CacheSourceTestCase extends CakeTestCase {
 		$this->dataSource = new CacheSourceTest(array(
 			'original' => $this->CacheData->useDbConfig
 		));
-		// set up default cache config for tests
-		Cache::config('default', array(
-			'engine' => 'File',
-			'duration' => '+6 hours',
-			'prefix' => 'cacher_tests_',
-			'path' => CACHE
-		));
 	}
 
 	function tearDown() {
+		parent::tearDown();
 		Cache::clear(false, 'default');
 		unset($this->CacheData);
 		unset($this->dataSource);
 	}
 
+/**
+ * @expectedException CacheException
+ */
 	function testMissingConfig() {
 		Cache::drop('default');
 
-		$this->expectError();
 		$this->dataSource->__construct();
 	}
 
