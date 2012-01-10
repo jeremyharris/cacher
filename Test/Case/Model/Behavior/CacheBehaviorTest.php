@@ -1,10 +1,9 @@
 <?php
 
-App::import('Model', 'App');
-App::import('Lib', 'Folder');
-if (!class_exists('Cache')) {
-	require LIBS . 'cache.php';
-}
+App::uses('App', 'Model');
+App::uses('ModelBehavior', 'Model');
+App::uses('Folder', 'Utility');
+App::uses('Cache', 'Cache');
 
 /**
  * OtherBehavior to call a datasource function if the Cacher.cache source is
@@ -19,12 +18,12 @@ class OtherBehavior extends ModelBehavior {
 	 * @param array $queryData
 	 * @return string 
 	 */
-	function beforeFind(&$Model, $queryData = array()) {
+	function beforeFind($Model, $queryData = array()) {
 		$this->_dbconfig = $Model->useDbConfig;
 		$ds = $Model->getDataSource($this->_dbconfig);
 		$this->_dbfields = $ds->fields($Model);
 		$this->_dbfulltablename = $ds->fullTableName($Model);
-		$queryData['conditions'][$ds->name('CacheData.name LIKE')] = '%thing%';
+		$queryData['conditions']['CacheData.name LIKE'] = '%thing%';
 		return $queryData;
 	}
 	
@@ -34,13 +33,9 @@ class CacheBehaviorTestCase extends CakeTestCase {
 
 	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
 
-	function startTest() {
-		$this->_cacheDisable = Configure::read('Cache.disable');
-		$this->_originalCacheConfig = Cache::config('default');
+	function setUp() {
+		parent::setUp();
 		Configure::write('Cache.disable', false);
-		$this->CacheData =& ClassRegistry::init('CacheData');
-		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'auto' => true));
-		$ds = ConnectionManager::getDataSource('cacher');
 		// set up default cache config for tests
 		Cache::config('default', array(
 			'engine' => 'File',
@@ -48,29 +43,32 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'prefix' => 'cacher_tests_',
 			'path' => CACHE
 		));
-		Cache::clear(false, 'default');
+	}
+	
+	function startTest() {
+		$this->CacheData = ClassRegistry::init('CacheData');
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'auto' => true, 'config' => 'default'));
 	}
 
-	function endTest() {
+	function tearDown() {
 		Cache::clear(false, 'default');
-		Configure::write('Cache.disable', $this->_cacheDisable);
-		Cache::config('default', $this->_originalCacheConfig['settings']);
 		unset($this->CacheData);
-		ClassRegistry::flush();
 	}
 	
 	function testMissingDatasourceMethods() {
 		$this->CacheData->Behaviors->attach('Other');
 		
 		$results = $this->CacheData->find('all');
-		$this->assertEqual($this->CacheData->Behaviors->Other->_dbconfig, 'cacher');
-		$this->assertEqual(count($this->CacheData->Behaviors->Other->_dbfields), 5);
-		$this->assertEqual($this->CacheData->Behaviors->Other->_dbfulltablename, '`cache_datas`');
+		$this->assertEquals($this->CacheData->Behaviors->Other->_dbconfig, 'cacher');
+		$this->assertEquals(count($this->CacheData->Behaviors->Other->_dbfields), 5);
+		$this->assertEquals($this->CacheData->Behaviors->Other->_dbfulltablename, '`cache_datas`');
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array(
 			'A Cached Thing'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
+		
+		$this->CacheData->Behaviors->detach('Other');
 	}
 
 	function testChangeDurationOnTheFly() {
@@ -89,7 +87,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		// test that it's pulling from the cache
 		$this->CacheData->delete(1);
@@ -104,11 +102,11 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		$ds = ConnectionManager::getDataSource('cacher');
 		$result = Cache::config('default');
-		$this->assertEqual($result['settings']['duration'], strtotime('+42weeks') - strtotime('now'));
+		$this->assertEquals($result['settings']['duration'], strtotime('+42weeks') - strtotime('now'));
 	}
 
 	function testCacheOnTheFly() {
@@ -127,7 +125,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		// test that it's pulling from the cache
 		$this->CacheData->delete(1);
@@ -142,7 +140,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 	}
 
 	function testAuto() {
@@ -160,7 +158,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		// test that it's not pulling from the cache
 		$this->CacheData->delete(1);
@@ -173,7 +171,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$expected = array(
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 		
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
 			'auto' => true
@@ -189,7 +187,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		));
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array();
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 	}
 
 	function testUseDifferentCacheConfig() {
@@ -214,7 +212,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		// test that it's pulling from the cache
 		$this->CacheData->delete(1);
@@ -228,10 +226,10 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 		
 		$ds = ConnectionManager::getDataSource('cacher');
-		$this->assertEqual($ds->config['config'], 'cacheTest');
+		$this->assertEquals($ds->config['config'], 'cacheTest');
 		
 		$map = Cache::read('map', 'cacheTest');
 		$this->assertTrue($map !== false);
@@ -266,7 +264,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		// test that it's pulling from the cache
 		$this->CacheData->delete(1);
@@ -280,10 +278,10 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 		
 		$ds = ConnectionManager::getDataSource('cacher');
-		$this->assertEqual($ds->config['config'], 'cacherMemcache');
+		$this->assertEquals($ds->config['config'], 'cacherMemcache');
 		
 		$map = Cache::read('map', 'cacherMemcache');
 		$this->assertTrue($map !== false);
@@ -303,8 +301,8 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('duration' => '+1 days'));
 		$this->assertTrue(in_array('cacher', ConnectionManager::sourceList()));
 
-		$this->assertEqual($this->CacheData->_useDbConfig, 'test_suite');
-		$this->assertEqual($this->CacheData->useDbConfig, 'test_suite');
+		$this->assertEquals($this->CacheData->_useDbConfig, 'test');
+		$this->assertEquals($this->CacheData->useDbConfig, 'test');
 	}
 
 	function testClearCache() {
@@ -319,7 +317,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 		
 		$ds = ConnectionManager::getDataSource('cacher');
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '123')));
@@ -327,7 +325,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 
 		$map = Cache::read('map', 'default');
 		$results = count($map[$ds->source->configKeyName][$this->CacheData->alias]);
-		$this->assertEqual($results, 3);
+		$this->assertEquals($results, 3);
 		foreach ($map[$ds->source->configKeyName][$this->CacheData->alias] as $key) {
 			$this->assertTrue(Cache::read($key, 'default') !== false, 'Failed checking key '.$key);
 		}
@@ -336,7 +334,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->CacheData->clearCache(array('conditions' => array('CacheData.name LIKE' => '456')));
 		$map = Cache::read('map', 'default');
 		$results = count($map[$ds->source->configKeyName][$this->CacheData->alias]);
-		$this->assertEqual($results, 2);
+		$this->assertEquals($results, 2);
 		foreach ($map[$ds->source->configKeyName][$this->CacheData->alias] as $key) {
 			$this->assertTrue(Cache::read($key, 'default') !== false, 'Failed checking key '.$key);
 		}
@@ -345,7 +343,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->CacheData->clearCache();
 		$map = Cache::read('map', 'default');
 		$results = count($map[$ds->source->configKeyName][$this->CacheData->alias]);
-		$this->assertEqual($results, 0);
+		$this->assertEquals($results, 0);
 		foreach ($map[$ds->source->configKeyName][$this->CacheData->alias] as $key) {
 			$this->assertTrue(Cache::read($key, 'default') !== false, 'Failed checking key '.$key);
 		}
@@ -362,7 +360,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 
 		// test that it's pulling from the cache
 		$this->CacheData->delete(1);
@@ -376,11 +374,11 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing',
 			'Cache behavior'
 		);
-		$this->assertEqual($results, $expected);
+		$this->assertEquals($results, $expected);
 	}
 
 	function testFindingOnMultipleDbConfigs() {
-		$testSuite = ConnectionManager::getDataSource('test_suite');
+		$testSuite = ConnectionManager::getDataSource('test');
 		ConnectionManager::create('test1', $testSuite->config);
 		ConnectionManager::create('test2', $testSuite->config);
 
@@ -397,11 +395,11 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$count2 = $CacheData2->find('count');
 		$CacheData1->delete(1);
 		$CacheData2->delete(1);
-		$this->assertEqual($count1, $CacheData1->find('count'));
-		$this->assertEqual($count2, $CacheData2->find('count'));
+		$this->assertEquals($count1, $CacheData1->find('count'));
+		$this->assertEquals($count2, $CacheData2->find('count'));
 
-		$this->assertEqual($CacheData1->useDbConfig, 'test1');
-		$this->assertEqual($CacheData2->useDbConfig, 'test2');
+		$this->assertEquals($CacheData1->useDbConfig, 'test1');
+		$this->assertEquals($CacheData2->useDbConfig, 'test2');
 	}
 
 	function testSave() {
@@ -411,7 +409,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->CacheData->save($data);
 		$results = $this->CacheData->read();
 		$expected = 'Save me';
-		$this->assertEqual($results['CacheData']['name'], 'Save me');
+		$this->assertEquals($results['CacheData']['name'], 'Save me');
 	}
 
 	function testUpdate() {
@@ -419,7 +417,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$data['CacheData']['name'] = 'Updated';
 		$this->CacheData->save($data);
 		$this->CacheData->id = 1;
-		$this->assertEqual($this->CacheData->field('name'), 'Updated');
+		$this->assertEquals($this->CacheData->field('name'), 'Updated');
 	}
 }
 

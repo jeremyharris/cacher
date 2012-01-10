@@ -11,7 +11,8 @@
 /**
  * Includes
  */
-App::import('Lib', 'Folder');
+App::uses('Folder', 'Utility');
+App::uses('DataSource', 'Model/Datasource');
 
 /**
  * CacheSource datasource
@@ -55,7 +56,7 @@ class CacheSource extends DataSource {
 			trigger_error('Cacher.CacheSource::__construct() :: Cache config '.$this->config['config'].' not configured.', E_USER_WARNING);
 		}
 
-		$this->source =& ConnectionManager::getDataSource($this->config['original']);
+		$this->source = ConnectionManager::getDataSource($this->config['original']);
 	}
 
 /**
