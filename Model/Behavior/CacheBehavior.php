@@ -137,11 +137,8 @@ class CacheBehavior extends ModelBehavior {
 		if ($queryData !== null) {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
-		$cache = Cache::getInstance();
-		$_originalCacheConfig = $cache->__name;
 		$ds = ConnectionManager::getDataSource('cacher');
 		$success = $ds->clearModelCache($Model, $queryData);
-		Cache::config($_originalCacheConfig);
 		return $success;
 	}
 

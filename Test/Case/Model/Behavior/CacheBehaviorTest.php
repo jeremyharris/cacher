@@ -299,21 +299,6 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		Cache::drop('cacherMemcache');
 	}
 
-	function testRememberCache() {
-		$settings = Cache::config('default');
-		$oldPath = $settings['settings']['path'];
-
-		$results = $this->CacheData->find('all', array(
-			'conditions' => array(
-				'CacheData.name LIKE' => '%cache%'
-			)
-		));
-
-		$settings = Cache::config();
-		$result = $settings['settings']['path'];
-		$this->assertEqual($result, $oldPath);
-	}
-
 	function testSetup() {
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('duration' => '+1 days'));
 		$this->assertTrue(in_array('cacher', ConnectionManager::sourceList()));
