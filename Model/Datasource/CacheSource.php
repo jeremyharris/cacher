@@ -169,13 +169,27 @@ class CacheSource extends DataSource {
  * @param Model $Model The model
  * @return boolean
  */
-	function _resetSource($Model) {
+	protected function _resetSource($Model) {
 		if (isset($Model->_useDbConfig)) {
-			$this->source =& ConnectionManager::getDataSource($Model->_useDbConfig);
+			$this->source = ConnectionManager::getDataSource($Model->_useDbConfig);
 		}
 		return $Model->setDataSource(ConnectionManager::getSourceName($this->source));
 	}
 
+/**
+ * Since Datasource has the method `describe()`, it won't be caught `__call()`.
+ * This ensures it is called on the original datasource properly.
+ * 
+ * @param mixed $model
+ * @return mixed 
+ */
+	public function describe($model) {
+		if (method_exists($this->source, 'describe')) {
+			return $this->source->describe($model);
+		}
+		return $this->describe($model);
+	}
+	
 }
 
 ?>
