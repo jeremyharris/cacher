@@ -24,15 +24,15 @@ class CacheBehavior extends ModelBehavior {
  *
  * @var boolean
  */
-	var $cacheResults = false;
+	public $cacheResults = false;
 
 /**
  * Settings
  *
  * @var array
  */
-	var $settings;
-
+	public $settings;
+	
 /**
  * Sets up a connection using passed settings
  *
@@ -47,7 +47,7 @@ class CacheBehavior extends ModelBehavior {
  * @param array $config Configuration settings
  * @see Cache::config()
  */
-	function setup(&$Model, $config = array()) {
+	public function setup($Model, $config = array()) {
 		$_defaults = array(
 			'config' => 'default',
 			'clearOnDelete' => true,
@@ -82,7 +82,7 @@ class CacheBehavior extends ModelBehavior {
  * @param Model $Model The calling model
  * @param array $queryData The query
  */
-	function beforeFind(&$Model, $queryData) {
+	public function beforeFind($Model, $queryData) {
 		$this->cacheResults = false;
 		if (isset($queryData['cacher'])) {
 			if (is_string($queryData['cacher'])) {
@@ -107,7 +107,7 @@ class CacheBehavior extends ModelBehavior {
  *
  * @param Model $Model The calling model
  */	
-	function beforeDelete(&$Model) {
+	public function beforeDelete($Model) {
 		if ($this->settings[$Model->alias]['clearOnDelete']) {
 			$this->clearCache($Model);
 		}
@@ -119,7 +119,7 @@ class CacheBehavior extends ModelBehavior {
  *
  * @param Model $Model The calling model
  */
-	function beforeSave(&$Model) {
+	public function beforeSave($Model) {
 		if ($this->settings[$Model->alias]['clearOnSave']) {
 			$this->clearCache($Model);
 		}
@@ -133,7 +133,7 @@ class CacheBehavior extends ModelBehavior {
  * @param Model $Model The calling model
  * @return boolean
  */
-	function clearCache(&$Model, $queryData = null) {
+	public function clearCache($Model, $queryData = null) {
 		if ($queryData !== null) {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
@@ -152,10 +152,9 @@ class CacheBehavior extends ModelBehavior {
  *
  * @param array $query The query
  * @return array The modified query
- * @access protected
  * @see Model::find()
  */
-	function _prepareFind($Model, $query = array()) {
+	protected function _prepareFind($Model, $query = array()) {
 		$query = array_merge(
 			array(
 				'conditions' => null, 'fields' => null, 'joins' => array(), 'limit' => null,
