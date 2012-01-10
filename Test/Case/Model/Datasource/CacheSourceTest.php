@@ -48,6 +48,20 @@ class CacheSourceTestCase extends CakeTestCase {
 		unset($this->dataSource);
 	}
 
+	function testMissingConfig() {
+		Cache::drop('default');
+
+		$this->expectError();
+		$this->dataSource->__construct();
+	}
+
+	function testCacheDisable() {
+		Cache::drop('config');
+		Cache::write('Cache.disable', true);
+
+		$this->dataSource->__construct();
+	}
+
 	function testMultipleDbConfigs() {
 		$testSuite = ConnectionManager::getDataSource('test');
 		ConnectionManager::create('test1', $testSuite->config);
