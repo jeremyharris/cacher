@@ -33,6 +33,7 @@ If you want to use a different configuration, just pass it in the 'config' key.
 * `clearOnSave` Whether or not to delete the cache on saves (default `true`)
 * `clearOnDelete` Whether or not to delete the cache on deletes (default `true`)
 * `auto` Automatically cache (default `false`)
+* `gzip` Automatically compress/decompress cached data (default `false`)
 
 ### Using Cacher with `Model::find()`, `Controller::paginate()`, etc.
 

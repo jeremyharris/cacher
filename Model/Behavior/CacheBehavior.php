@@ -52,7 +52,8 @@ class CacheBehavior extends ModelBehavior {
 			'config' => 'default',
 			'clearOnDelete' => true,
 			'clearOnSave' => true,
-			'auto' => false
+			'auto' => false,
+			'gzip' => false
 		);
 		$settings = array_merge($_defaults, $config);
 
@@ -95,7 +96,7 @@ class CacheBehavior extends ModelBehavior {
 				$this->cacheResults = true;
 			} else {
 				$this->cacheResults = (boolean)$queryData['cacher'];
-			}			
+			}
 			unset($queryData['cacher']);
 		}
 		$this->cacheResults = $this->cacheResults || $this->settings[$Model->alias]['auto'];
