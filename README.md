@@ -33,6 +33,7 @@ If you want to use a different configuration, just pass it in the 'config' key.
 * `clearOnSave` Whether or not to delete the cache on saves (default `true`)
 * `clearOnDelete` Whether or not to delete the cache on deletes (default `true`)
 * `auto` Automatically cache (default `false`)
+* `gzip` Automatically compress/decompress cached data (default `false`)
 
 ### Using Cacher with `Model::find()`, `Controller::paginate()`, etc.
 
@@ -54,6 +55,17 @@ either `true` to cache the results, `false` to not cache it, or a valid
     $this->Post->find('all', array(
 		  'conditions' => array('Post.name LIKE' => '%okay i guess%'),
 		  'cacher' => true
+    ));
+
+You can automatically compress and decompress cached data on store and retreive 
+with the `'gzip'` option. `true` to use compression, `false` to not use compression.
+If set at the query level it will override the global settings for that call.
+
+    // cache gzip compressed results of this query
+    $this->Post->find('all', array(
+		  'conditions' => array('Post.name LIKE' => '%cache me%'),
+		  'cacher' => true,
+		  'gzip' => true
     ));
 
 ## How it works

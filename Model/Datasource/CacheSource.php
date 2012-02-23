@@ -90,9 +90,19 @@ class CacheSource extends DataSource {
 		$results = Cache::read($key, $this->config['config']);
 		if ($results === false) {
 			$results = $this->source->read($Model, $queryData);
-			Cache::write($key, $results, $this->config['config']);
+			// compress before storing
+			if (isset($queryData['gzip'])) {
+				Cache::write($key, gzcompress(serialize($results)), $this->config['config']);
+			} else {
+				Cache::write($key, $results, $this->config['config']);
+			}
 			$this->_map($Model, $key);
-		}		
+		} else {
+			// uncompress data from cache
+			if (isset($queryData['gzip'])) {
+				$results = unserialize(gzuncompress($results));
+			}
+		}
 		return $results;
 	}
 
@@ -141,9 +151,10 @@ class CacheSource extends DataSource {
 			),
 			(array)$query
 		);
+		$gzip = (isset($query['gzip'])) ? '.gz' : '';
 		$queryHash = md5(serialize($query));
 		$sourceName = $this->source->configKeyName;
-		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash;
+		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash.$gzip;
 	}
 	
 /**

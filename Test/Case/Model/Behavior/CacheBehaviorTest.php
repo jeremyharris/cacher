@@ -190,6 +190,40 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->assertEquals($results, $expected);
 	}
 
+	function testGzip() {
+		// test gzip as a Cacher config param
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
+			'auto' => true,
+			'gzip' => true
+		));
+
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			)
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'A Cached Thing',
+			'Cache behavior'
+		);
+		$this->assertEquals($results, $expected);
+
+		// test that it's pulling from the cache
+		$this->CacheData->delete(1);
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			)
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'A Cached Thing',
+			'Cache behavior'
+		);
+		$this->assertEquals($results, $expected);
+	}
+
 	function testUseDifferentCacheConfig() {
 		Cache::config('cacheTest', array(
 			'engine' => 'File',

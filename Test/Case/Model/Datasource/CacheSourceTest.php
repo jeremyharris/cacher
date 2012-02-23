@@ -78,13 +78,13 @@ class CacheSourceTestCase extends CakeTestCase {
 		$CacheData1 = ClassRegistry::init('CacheData');
 		$CacheData1->_useDbConfig = 'test1';
 		$CacheData1->useDbConfig = 'cacher';
-		$CacheData1->alias = 'CacheData1';
+		$CacheData1->alias = 'CacheData';
 		$CacheData2 = ClassRegistry::init('CacheData2');
 		$CacheData2->_useDbConfig = 'test2';
 		$CacheData2->useDbConfig = 'cacher';
 		$CacheData2->alias = 'CacheData2';
 
-		$conditions = array('conditions' => array('CacheData1.id' => 1));
+		$conditions = array('conditions' => array('CacheData.id' => 1));
 		$this->dataSource->read($CacheData1, $conditions);
 		$key = $this->dataSource->_key($CacheData1, $conditions);
 		$this->assertTrue(strpos($key, 'test1') >= 0);
@@ -94,7 +94,7 @@ class CacheSourceTestCase extends CakeTestCase {
 		$this->assertEquals($CacheData1->useDbConfig, 'test1');
 
 		// read from ds1, ds2, then read cache
-		$conditions = array('conditions' => array('CacheData1.id' => 1));
+		$conditions = array('conditions' => array('CacheData.id' => 1));
 		$this->dataSource->read($CacheData1, $conditions);
 		$key1 = $this->dataSource->_key($CacheData1, $conditions);	
 		$results1 = Cache::read($key1, 'default');
