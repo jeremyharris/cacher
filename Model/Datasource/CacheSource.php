@@ -151,9 +151,10 @@ class CacheSource extends DataSource {
 			),
 			(array)$query
 		);
+		$gzip = (isset($query['gzip'])) ? '.gz' : '';
 		$queryHash = md5(serialize($query));
 		$sourceName = $this->source->configKeyName;
-		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash;
+		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash.$gzip;
 	}
 	
 /**
