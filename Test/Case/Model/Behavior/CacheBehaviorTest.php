@@ -18,11 +18,11 @@ class OtherBehavior extends ModelBehavior {
 	 * @param array $queryData
 	 * @return string 
 	 */
-	function beforeFind($Model, $queryData = array()) {
+	function beforeFind(Model $Model, $queryData = array()) {
 		$this->_dbconfig = $Model->useDbConfig;
 		$ds = $Model->getDataSource($this->_dbconfig);
 		$this->_dbfields = $ds->fields($Model);
-		$this->_dbfulltablename = $ds->fullTableName($Model);
+		$this->_dbfulltablename = $ds->fullTableName($Model, true, false);
 		$queryData['conditions']['CacheData.name LIKE'] = '%thing%';
 		return $queryData;
 	}
@@ -45,7 +45,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		));
 	}
 	
-	function startTest() {
+	function startTest($method) {
 		$this->CacheData = ClassRegistry::init('CacheData');
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'auto' => true, 'config' => 'default'));
 	}

@@ -6,11 +6,11 @@ App::uses('CacheSource', 'Cacher.Model/Datasource');
 
 class CacheSourceTest extends CacheSource {
 	
-	public function _key($Model, $query) {
+	public function _key(Model $Model, $query) {
 		return parent::_key($Model, $query);
 	}
 	
-	public function _map($Model, $key) {
+	public function _map(Model $Model, $key) {
 		return parent::_map($Model, $key);
 	}
 	
@@ -20,7 +20,10 @@ class CacheSourceTestCase extends CakeTestCase {
 
 	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
 
-	function startTest() {
+	function setUp() {
+		parent::setUp();
+		
+		// set up cache
 		Cache::write('Cache.disable', false);
 		// set up default cache config for tests
 		Cache::config('default', array(
@@ -29,12 +32,7 @@ class CacheSourceTestCase extends CakeTestCase {
 			'prefix' => 'cacher_tests_',
 			'path' => CACHE
 		));
-	}
-	
-	function setUp() {
-		parent::setUp();
-		// set up cache
-		$this->startTest();
+		
 		$this->CacheData = ClassRegistry::init('CacheData');
 		if (!in_array('cacher', ConnectionManager::sourceList())) {
 			 ConnectionManager::create('cacher', array(

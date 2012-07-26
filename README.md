@@ -10,7 +10,7 @@ results? Use Cacher!
 
 ## Requirements
 
-* CakePHP 2.0.x (check tags for older versions of CakePHP)
+* CakePHP >= 2.0.x (check tags for older versions of CakePHP)
 
 ## Usage
 

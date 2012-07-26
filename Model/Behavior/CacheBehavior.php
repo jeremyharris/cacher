@@ -47,7 +47,7 @@ class CacheBehavior extends ModelBehavior {
  * @param array $config Configuration settings
  * @see Cache::config()
  */
-	public function setup($Model, $config = array()) {
+	public function setup(Model $Model, $config = array()) {
 		$_defaults = array(
 			'config' => 'default',
 			'clearOnDelete' => true,
@@ -87,7 +87,7 @@ class CacheBehavior extends ModelBehavior {
  * @param Model $Model The calling model
  * @param array $queryData The query
  */
-	public function beforeFind($Model, $queryData) {
+	public function beforeFind(Model $Model, $queryData) {
 		$this->cacheResults = false;
 		if (isset($queryData['cacher'])) {
 			if (is_string($queryData['cacher'])) {
@@ -112,7 +112,7 @@ class CacheBehavior extends ModelBehavior {
  *
  * @param Model $Model The calling model
  */	
-	public function beforeDelete($Model) {
+	public function beforeDelete(Model $Model, $cascade = true) {
 		if ($this->settings[$Model->alias]['clearOnDelete']) {
 			$this->clearCache($Model);
 		}
@@ -124,7 +124,7 @@ class CacheBehavior extends ModelBehavior {
  *
  * @param Model $Model The calling model
  */
-	public function beforeSave($Model) {
+	public function beforeSave(Model $Model) {
 		if ($this->settings[$Model->alias]['clearOnSave']) {
 			$this->clearCache($Model);
 		}
@@ -138,7 +138,7 @@ class CacheBehavior extends ModelBehavior {
  * @param Model $Model The calling model
  * @return boolean
  */
-	public function clearCache($Model, $queryData = null) {
+	public function clearCache(Model $Model, $queryData = null) {
 		if ($queryData !== null) {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
@@ -156,7 +156,7 @@ class CacheBehavior extends ModelBehavior {
  * @return array The modified query
  * @see Model::find()
  */
-	protected function _prepareFind($Model, $query = array()) {
+	protected function _prepareFind(Model $Model, $query = array()) {
 		$query = array_merge(
 			array(
 				'conditions' => null, 'fields' => null, 'joins' => array(), 'limit' => null,

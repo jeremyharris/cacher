@@ -84,7 +84,7 @@ class CacheSource extends DataSource {
  * @return array Results
  * @see DataSource::read()
  */
-	public function read($Model, $queryData = array()) {
+	public function read(Model $Model, $queryData = array()) {
 		$this->_resetSource($Model);
 		$key = $this->_key($Model, $queryData);
 		$results = Cache::read($key, $this->config['config']);
@@ -113,7 +113,7 @@ class CacheSource extends DataSource {
  * @param array $query If null, clears all for this model
  * @param Model $Model The model to clear the cache for
  */
-	public function clearModelCache($Model, $query = null) {
+	public function clearModelCache(Model $Model, $query = null) {
 		$map = Cache::read('map', $this->config['config']);
 		
 		$keys = array();
@@ -143,7 +143,7 @@ class CacheSource extends DataSource {
  * @param array $query The query
  * @return string
  */
-	protected function _key($Model, $query) {
+	protected function _key(Model $Model, $query) {
 		$query = array_merge(
 			array(
 				'conditions' => null, 'fields' => null, 'joins' => array(), 'limit' => null,
@@ -163,7 +163,7 @@ class CacheSource extends DataSource {
  * @param Model $Model
  * @param string $key 
  */
-	protected function _map($Model, $key) {
+	protected function _map(Model $Model, $key) {
 		$map = Cache::read('map', $this->config['config']);
 		if ($map === false) {
 			$map = array();
