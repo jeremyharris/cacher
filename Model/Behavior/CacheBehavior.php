@@ -20,10 +20,17 @@
 class CacheBehavior extends ModelBehavior {
 
 /**
- * Whether or not to cache this call's results
+ * Whether or not caching is enabled system-wide
  *
  * @var boolean
  */
+	public $cacheEnabled;
+
+	/**
+	 * Whether or not to cache this call's results
+	 *
+	 * @var boolean
+	 */
 	public $cacheResults = false;
 
 /**
@@ -48,6 +55,13 @@ class CacheBehavior extends ModelBehavior {
  * @see Cache::config()
  */
 	public function setup(Model $Model, $config = array()) {
+
+		$this->cacheEnabled = Configure::read('Cache.disable') !== true;
+
+		if (!$this->cacheEnabled) {
+			return;
+		}
+
 		$_defaults = array(
 			'config' => 'default',
 			'clearOnDelete' => true,
@@ -88,6 +102,9 @@ class CacheBehavior extends ModelBehavior {
  * @param array $queryData The query
  */
 	public function beforeFind(Model $Model, $queryData) {
+		if (!$this->cacheEnabled) {
+			return $queryData;
+		}
 		$this->cacheResults = false;
 		if (isset($queryData['cacher'])) {
 			if (is_string($queryData['cacher'])) {
@@ -113,7 +130,7 @@ class CacheBehavior extends ModelBehavior {
  * @param Model $Model The calling model
  */	
 	public function beforeDelete(Model $Model, $cascade = true) {
-		if ($this->settings[$Model->alias]['clearOnDelete']) {
+		if ($this->settings[$Model->alias]['clearOnDelete'] && $this->cacheEnabled) {
 			$this->clearCache($Model);
 		}
 		return true;
@@ -125,7 +142,7 @@ class CacheBehavior extends ModelBehavior {
  * @param Model $Model The calling model
  */
 	public function beforeSave(Model $Model) {
-		if ($this->settings[$Model->alias]['clearOnSave']) {
+		if ($this->settings[$Model->alias]['clearOnSave'] && $this->cacheEnabled) {
 			$this->clearCache($Model);
 		}
 		return true;
@@ -139,6 +156,9 @@ class CacheBehavior extends ModelBehavior {
  * @return boolean
  */
 	public function clearCache(Model $Model, $queryData = null) {
+		if(!$this->cacheEnabled) {
+			return true;
+		}
 		if ($queryData !== null) {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
