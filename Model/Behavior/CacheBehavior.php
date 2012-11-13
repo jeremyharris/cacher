@@ -88,6 +88,9 @@ class CacheBehavior extends ModelBehavior {
  * @param array $queryData The query
  */
 	public function beforeFind(Model $Model, $queryData) {
+		if (Configure::read('Cache.disable') === true) {
+			return $queryData;
+		}
 		$this->cacheResults = false;
 		if (isset($queryData['cacher'])) {
 			if (is_string($queryData['cacher'])) {
