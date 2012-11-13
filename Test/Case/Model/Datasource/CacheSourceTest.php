@@ -63,7 +63,7 @@ class CacheSourceTestCase extends CakeTestCase {
 
 	function testCacheDisable() {
 		Cache::drop('config');
-		Cache::write('Cache.disable', true);
+		Configure::write('Cache.disable', true);
 
 		$this->dataSource->__construct();
 	}

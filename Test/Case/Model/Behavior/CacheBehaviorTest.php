@@ -22,6 +22,7 @@ class OtherBehavior extends ModelBehavior {
 		$this->_dbconfig = $Model->useDbConfig;
 		$ds = $Model->getDataSource($this->_dbconfig);
 		$this->_dbfields = $ds->fields($Model);
+		$this->_queryData = $queryData;
 		$this->_dbfulltablename = $ds->fullTableName($Model, true, false);
 		$queryData['conditions']['CacheData.name LIKE'] = '%thing%';
 		return $queryData;
@@ -53,6 +54,26 @@ class CacheBehaviorTestCase extends CakeTestCase {
 	function tearDown() {
 		Cache::clear(false, 'default');
 		unset($this->CacheData);
+	}
+	
+	function testCacheDisable() {
+		Cache::drop('config');
+		Configure::write('Cache.disable', true);
+
+		$this->CacheData->Behaviors->attach('Other');
+		
+		$this->CacheData->find('all', array(
+			'cacher' => 'keyexists'
+		));
+		
+		$result = $this->CacheData->Behaviors->Other->_dbconfig;
+		$expected = 'test';
+		$this->assertEquals($result, $expected);
+		
+		// make sure it doesn't hit the beforeFind callback
+		$result = $this->CacheData->Behaviors->Other->_queryData['cacher'];
+		$expected = 'keyexists';
+		$this->assertEquals($result, $expected);
 	}
 	
 	function testMissingDatasourceMethods() {
