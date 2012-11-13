@@ -206,5 +206,3 @@ class CacheSource extends DataSource {
 	}
 	
 }
-
-?>
