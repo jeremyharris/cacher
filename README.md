@@ -27,6 +27,9 @@ If you want to use a different configuration, just pass it in the 'config' key.
         )
     );
 
+> It's best to place Cacher last on your list of behaviors so the query Cacher
+> looks for reflects the changes the previous behaviors might have made.
+
 ### Options that you can pass:
 
 * `config` The name of an existing Cache configuration to duplicate (default 'default')
