@@ -29,4 +29,3 @@ class CacheDataFixture extends CakeTestFixture {
 		)
 	);
 }
-?>

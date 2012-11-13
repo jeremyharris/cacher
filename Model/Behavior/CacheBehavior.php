@@ -177,5 +177,3 @@ class CacheBehavior extends ModelBehavior {
 		return $query;
 	}
 }
-
-?>

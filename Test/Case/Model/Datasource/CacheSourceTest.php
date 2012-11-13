@@ -273,5 +273,3 @@ class CacheSourceTestCase extends CakeTestCase {
 		$this->assertEquals($results, $expected);
 	}
 }
-
-?>

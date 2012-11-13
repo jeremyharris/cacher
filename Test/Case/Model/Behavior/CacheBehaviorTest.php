@@ -454,5 +454,3 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->assertEquals($this->CacheData->field('name'), 'Updated');
 	}
 }
-
-?>
