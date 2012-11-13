@@ -91,7 +91,6 @@ class CacheBehavior extends ModelBehavior {
 		$this->cacheResults = false;
 		if (isset($queryData['cacher'])) {
 			if (is_string($queryData['cacher'])) {
-				$ds = ConnectionManager::getDataSource('cacher');
 				Cache::config($this->settings[$Model->alias]['config'], array('duration' => $queryData['cacher']));
 				$this->cacheResults = true;
 			} else {
