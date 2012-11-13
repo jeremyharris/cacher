@@ -53,6 +53,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 
 	function tearDown() {
 		Cache::clear(false, 'default');
+		ClassRegistry::flush();
 		unset($this->CacheData);
 	}
 	
@@ -74,6 +75,21 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$result = $this->CacheData->Behaviors->Other->_queryData['cacher'];
 		$expected = 'keyexists';
 		$this->assertEquals($result, $expected);
+	}
+	
+	function testUseOriginalSource() {
+		$originalDs = $this->CacheData->getDataSource($this->CacheData->useDbConfig);
+		$this->assertTrue($originalDs->connected);
+		
+		$this->CacheData->setDataSource('cacher');
+		$ds = $this->CacheData->getDataSource($this->CacheData->useDbConfig);
+		$this->assertTrue($ds->connected);
+		
+		$fields = $ds->fields($this->CacheData);
+		$this->assertEquals(count($fields), 5);
+		
+		$originalDs->connected = false;
+		$this->assertFalse($ds->connected);
 	}
 	
 	function testMissingDatasourceMethods() {

@@ -26,11 +26,18 @@ App::uses('DataSource', 'Model/Datasource');
 class CacheSource extends DataSource {
 
 /**
- * Stored original datasource for fallback methods
+ * Stored original datasource for fallback methods and properties
  *
  * @var DataSource
  */
 	public $source = null;
+
+/**
+ * DataSource config
+ * 
+ * @var array
+ */
+	public $config = array();
 
 /**
  * Constructor
@@ -49,7 +56,7 @@ class CacheSource extends DataSource {
 	public function __construct($config = array()) {
 		$config = array_merge(array('config' => 'default'), $config);
 		parent::__construct($config);
-
+		
 		if (Configure::read('Cache.disable') === true) {
 			return;
 		}
@@ -59,8 +66,16 @@ class CacheSource extends DataSource {
 		if (!Cache::isInitialized($this->config['config'])) {
 			throw new CacheException(sprintf('Missing cache configuration for "%s".', $this->config['config']));
 		}
-
+		
 		$this->source = ConnectionManager::getDataSource($this->config['original']);
+
+		// delete all inherited public properties so they get caught by __get
+		$ref = new ReflectionClass($this);
+		foreach ($ref->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+			if ($property->class !== 'CacheSource') {
+				unset($this->{$property->name});
+			}
+		}
 	}
 
 /**
@@ -73,6 +88,17 @@ class CacheSource extends DataSource {
  */
 	public function __call($name, $arguments) {
 		return call_user_func_array(array($this->source, $name), $arguments);
+	}
+
+/**
+ * Redirects calls to original datasource properties. Needed if the `Cacher.Cache` 
+ * behavior is attached before other behaviors that use the model's datasource methods.
+ * 
+ * @param string $name Original db source property
+ * @return mixed
+ */	
+	public function __get($name) {
+		return $this->source->{$name};
 	}
 	
 /**
