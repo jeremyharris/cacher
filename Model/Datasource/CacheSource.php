@@ -64,9 +64,9 @@ class CacheSource extends DataSource {
 	}
 
 /**
- * Redirects calls to original datasource methods. Needed if the `Cacher.Cache` 
+ * Redirects calls to original datasource methods. Needed if the `Cacher.Cache`
  * behavior is attached before other behaviors that use the model's datasource methods.
- * 
+ *
  * @param string $name Original db source function name
  * @param array $arguments Arguments
  * @return mixed
@@ -74,7 +74,7 @@ class CacheSource extends DataSource {
 	public function __call($name, $arguments) {
 		return call_user_func_array(array($this->source, $name), $arguments);
 	}
-	
+
 /**
  * Reads from cache if it exists. If not, it falls back to the original
  * datasource to retrieve the data and cache it for later
@@ -115,7 +115,7 @@ class CacheSource extends DataSource {
  */
 	public function clearModelCache(Model $Model, $query = null) {
 		$map = Cache::read('map', $this->config['config']);
-		
+
 		$keys = array();
 		if ($query !== null) {
 			$keys = array($this->_key($Model, $query));
@@ -156,12 +156,12 @@ class CacheSource extends DataSource {
 		$sourceName = $this->source->configKeyName;
 		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash.$gzip;
 	}
-	
+
 /**
  * Creates a cache map (used for deleting cache keys or groups)
- * 
+ *
  * @param Model $Model
- * @param string $key 
+ * @param string $key
  */
 	protected function _map(Model $Model, $key) {
 		$map = Cache::read('map', $this->config['config']);
@@ -194,9 +194,9 @@ class CacheSource extends DataSource {
 /**
  * Since Datasource has the method `describe()`, it won't be caught `__call()`.
  * This ensures it is called on the original datasource properly.
- * 
+ *
  * @param mixed $model
- * @return mixed 
+ * @return mixed
  */
 	public function describe($model) {
 		if (method_exists($this->source, 'describe')) {
@@ -204,7 +204,7 @@ class CacheSource extends DataSource {
 		}
 		return $this->describe($model);
 	}
-	
+
 }
 
 ?>

@@ -13,10 +13,10 @@ class OtherBehavior extends ModelBehavior {
 
 	/**
 	 * Uses the model datasource _after_ it was set to Cacher.cache
-	 * 
+	 *
 	 * @param Model $Model
 	 * @param array $queryData
-	 * @return string 
+	 * @return string
 	 */
 	function beforeFind(Model $Model, $queryData = array()) {
 		$this->_dbconfig = $Model->useDbConfig;
@@ -26,7 +26,7 @@ class OtherBehavior extends ModelBehavior {
 		$queryData['conditions']['CacheData.name LIKE'] = '%thing%';
 		return $queryData;
 	}
-	
+
 }
 
 class CacheBehaviorTestCase extends CakeTestCase {
@@ -44,7 +44,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'path' => CACHE
 		));
 	}
-	
+
 	function startTest($method) {
 		$this->CacheData = ClassRegistry::init('CacheData');
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'auto' => true, 'config' => 'default'));
@@ -54,10 +54,10 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		Cache::clear(false, 'default');
 		unset($this->CacheData);
 	}
-	
+
 	function testMissingDatasourceMethods() {
 		$this->CacheData->Behaviors->attach('Other');
-		
+
 		$results = $this->CacheData->find('all');
 		$this->assertEquals($this->CacheData->Behaviors->Other->_dbconfig, 'cacher');
 		$this->assertEquals(count($this->CacheData->Behaviors->Other->_dbfields), 5);
@@ -67,7 +67,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'A Cached Thing'
 		);
 		$this->assertEquals($results, $expected);
-		
+
 		$this->CacheData->Behaviors->detach('Other');
 	}
 
@@ -172,11 +172,11 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'Cache behavior'
 		);
 		$this->assertEquals($results, $expected);
-		
+
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
 			'auto' => true
 		));
-		
+
 		// test that it's not pulling from the cache
 		$this->CacheData->delete(2);
 		$results = $this->CacheData->find('all', array(
@@ -261,33 +261,33 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'Cache behavior'
 		);
 		$this->assertEquals($results, $expected);
-		
+
 		$ds = ConnectionManager::getDataSource('cacher');
 		$this->assertEquals($ds->config['config'], 'cacheTest');
-		
+
 		$map = Cache::read('map', 'cacheTest');
 		$this->assertTrue($map !== false);
 		$this->assertTrue(isset($map[$ds->source->configKeyName][$this->CacheData->alias][0]));
 		$cache = Cache::read($map[$ds->source->configKeyName][$this->CacheData->alias][0], 'cacheTest');
 		$this->assertTrue($cache !== false);
-		
+
 		Cache::clear(false, 'cacheTest');
 	}
-	
+
 	function testUseDifferentCacheEngine() {
 		$this->skipIf(!class_exists('Memcache'), 'Memcache is not installed, skipping test');
-		
+
 		Cache::config('cacherMemcache', array(
 			'duration' => '+1 days',
 			'engine' => 'Memcache',
-			'prefix' => Inflector::slug(APP_DIR) . '_cacher_test_', 
+			'prefix' => Inflector::slug(APP_DIR) . '_cacher_test_',
 		));
-		
+
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
 			'config' => 'cacherMemcache',
 			'clearOnDelete' => false
 		));
-		
+
 		$results = $this->CacheData->find('all', array(
 			'conditions' => array(
 				'CacheData.name LIKE' => '%cache%'
@@ -313,21 +313,21 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'Cache behavior'
 		);
 		$this->assertEquals($results, $expected);
-		
+
 		$ds = ConnectionManager::getDataSource('cacher');
 		$this->assertEquals($ds->config['config'], 'cacherMemcache');
-		
+
 		$map = Cache::read('map', 'cacherMemcache');
 		$this->assertTrue($map !== false);
 		$this->assertTrue(isset($map[$ds->source->configKeyName][$this->CacheData->alias][0]));
 		$cache = Cache::read($map[$ds->source->configKeyName][$this->CacheData->alias][0], 'cacherMemcache');
 		$this->assertTrue($cache !== false);
-		
+
 		$this->CacheData->clearCache();
-		
+
 		$map = Cache::read('map', 'cacherMemcache');
 		$this->assertTrue(empty($map[$ds->source->configKeyName][$this->CacheData->alias]));
-		
+
 		Cache::drop('cacherMemcache');
 	}
 
@@ -352,7 +352,7 @@ class CacheBehaviorTestCase extends CakeTestCase {
 			'Cache behavior'
 		);
 		$this->assertEquals($results, $expected);
-		
+
 		$ds = ConnectionManager::getDataSource('cacher');
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '123')));
 		$this->CacheData->find('all', array('conditions' => array('CacheData.name LIKE' => '456')));
