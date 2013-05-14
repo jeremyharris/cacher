@@ -81,15 +81,16 @@ class CacheSource extends DataSource {
  *
  * @param Model $Model
  * @param array $queryData
+ * @param integer $recursive
  * @return array Results
  * @see DataSource::read()
  */
-	public function read(Model $Model, $queryData = array()) {
+	public function read(Model $Model, $queryData = array(), $recursive = null) {
 		$this->_resetSource($Model);
 		$key = $this->_key($Model, $queryData);
 		$results = Cache::read($key, $this->config['config']);
 		if ($results === false) {
-			$results = $this->source->read($Model, $queryData);
+			$results = $this->source->read($Model, $queryData, $recursive);
 			// compress before storing
 			if (isset($this->config['gzip'])) {
 				Cache::write($key, gzcompress(serialize($results)), $this->config['config']);
