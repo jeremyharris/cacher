@@ -1,0 +1,18 @@
+{
+    "name": "jeremyharris/cacher",
+    "type": "cakephp-plugin",
+    "description": "Cacher is a plugin for CakePHP that allows you to easily cache find results",
+    "keywords": [
+        "cakephp", "plugin", "cache"
+    ],
+    "homepage": "https://github.com/jeremyharris/cacher",
+    "authors": [
+        {
+            "name": "Jeremy Harris",
+            "email": "jeremy@someguyjeremy.com"
+        }
+    ],
+    "require": {
+        "composer/installers": "*"
+    }
+}
