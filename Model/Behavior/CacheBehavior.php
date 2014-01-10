@@ -32,7 +32,7 @@ class CacheBehavior extends ModelBehavior {
  * @var array
  */
 	public $settings;
-	
+
 /**
  * Sets up a connection using passed settings
  *
@@ -102,7 +102,7 @@ class CacheBehavior extends ModelBehavior {
 			unset($queryData['cacher']);
 		}
 		$this->cacheResults = $this->cacheResults || $this->settings[$Model->alias]['auto'];
-		
+
 		if ($this->cacheResults) {
 			$Model->setDataSource('cacher');
 		}
@@ -113,7 +113,7 @@ class CacheBehavior extends ModelBehavior {
  * Intercepts delete to use the caching datasource instead
  *
  * @param Model $Model The calling model
- */	
+ */
 	public function beforeDelete(Model $Model, $cascade = true) {
 		if ($this->settings[$Model->alias]['clearOnDelete']) {
 			$this->clearCache($Model);
@@ -141,6 +141,9 @@ class CacheBehavior extends ModelBehavior {
  * @return boolean
  */
 	public function clearCache(Model $Model, $queryData = null) {
+		if (Configure::read('Cache.disable') === true) {
+			return true;
+		}
 		if ($queryData !== null) {
 			$queryData = $this->_prepareFind($Model, $queryData);
 		}
