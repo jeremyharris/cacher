@@ -197,12 +197,18 @@ class CacheBehaviorTestCase extends CakeTestCase {
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
 			'auto' => true
 		));
+		// create cached value
+		$this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%behav%'
+			)
+		));
 
 		// test that it's not pulling from the cache
 		$this->CacheData->delete(2);
 		$results = $this->CacheData->find('all', array(
 			'conditions' => array(
-				'CacheData.name LIKE' => '%cache%'
+				'CacheData.name LIKE' => '%behav%'
 			),
 			'cacher' => false
 		));

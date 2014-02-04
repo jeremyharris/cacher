@@ -91,7 +91,7 @@ class CacheBehavior extends ModelBehavior {
 		if (Configure::read('Cache.disable') === true) {
 			return $queryData;
 		}
-		$this->cacheResults = false;
+		$this->cacheResults = false || $this->settings[$Model->alias]['auto'];
 		if (isset($queryData['cacher'])) {
 			if (is_string($queryData['cacher'])) {
 				Cache::config($this->settings[$Model->alias]['config'], array('duration' => $queryData['cacher']));
@@ -101,7 +101,6 @@ class CacheBehavior extends ModelBehavior {
 			}
 			unset($queryData['cacher']);
 		}
-		$this->cacheResults = $this->cacheResults || $this->settings[$Model->alias]['auto'];
 
 		if ($this->cacheResults) {
 			$Model->setDataSource('cacher');
