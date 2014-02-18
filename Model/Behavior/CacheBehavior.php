@@ -125,7 +125,7 @@ class CacheBehavior extends ModelBehavior {
  *
  * @param Model $Model The calling model
  */
-	public function beforeSave(Model $Model) {
+	public function beforeSave(Model $Model, $options = array()) {
 		if ($this->settings[$Model->alias]['clearOnSave']) {
 			$this->clearCache($Model);
 		}
