@@ -2,8 +2,32 @@
 
 App::uses('App', 'Model');
 App::uses('ModelBehavior', 'Model');
+App::uses('CakeResponse', 'Network');
+App::uses('CakeRequest', 'Network');
+App::uses('Controller', 'Controller');
+App::uses('Paginator', 'Controller/Component');
 App::uses('Folder', 'Utility');
 App::uses('Cache', 'Cache');
+
+class TestCacherController extends Controller {
+
+	public $uses = array('CacheData');
+
+	public function index() {
+		$this->CacheData = ClassRegistry::init('CacheData');
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'config' => 'default'));
+
+		$this->paginate = array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			),
+			'cacher' => '+1 week',
+			'limit' => 1
+		);
+		$this->set('cacheData', $this->paginate($this->CacheData));
+	}
+
+}
 
 /**
  * OtherBehavior to call a datasource function if the Cacher.cache source is
@@ -30,7 +54,7 @@ class OtherBehavior extends ModelBehavior {
 
 }
 
-class CacheBehaviorTestCase extends CakeTestCase {
+class CacheBehaviorTestCase extends ControllerTestCase {
 
 	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
 
@@ -54,6 +78,41 @@ class CacheBehaviorTestCase extends CakeTestCase {
 	function tearDown() {
 		Cache::clear(false, 'default');
 		unset($this->CacheData);
+	}
+
+	function testCachePaginate() {
+		$this->testAction('/test_cacher/index/page:1');
+
+		$result = Set::extract('/CacheData/name', $this->vars['cacheData']);
+		$expected = array(
+			'A Cached Thing'
+		);
+		$this->assertEquals($expected, $result);
+
+		$this->testAction('/test_cacher/index/page:2');
+
+		$result = Set::extract('/CacheData/name', $this->vars['cacheData']);
+		$expected = array(
+			'Cache behavior'
+		);
+		$this->assertEquals($expected, $result);
+
+		$this->CacheData->delete(1);
+		$this->CacheData->delete(2);
+
+		$this->testAction('/test_cacher/index/page:1');
+
+		$result = Set::extract('/CacheData/name', $this->vars['cacheData']);
+		$expected = array(
+			'A Cached Thing'
+		);
+		$this->assertEquals($expected, $result);
+
+		$this->testAction('/test_cacher/index/page:1/sort:name/direction:asc');
+
+		$result = Set::extract('/CacheData/name', $this->vars['cacheData']);
+		$expected = array();
+		$this->assertEquals($expected, $result);
 	}
 
 	function testCacheDisable() {
