@@ -11,7 +11,7 @@ App::uses('Cache', 'Cache');
 
 class TestCacherController extends Controller {
 
-	public $uses = array('CacheData');
+	public $uses = false;
 
 	public function index() {
 		$this->CacheData = ClassRegistry::init('CacheData');
@@ -25,6 +25,35 @@ class TestCacherController extends Controller {
 			'limit' => 1
 		);
 		$this->set('cacheData', $this->paginate($this->CacheData));
+	}
+
+	public function albums($artistId = null) {
+		$this->Album = ClassRegistry::init('Album');
+		$this->Album->bindModel(array(
+			'belongsTo' => array(
+				'Artist'
+			)
+		));
+		$this->Album->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'config' => 'default'));
+
+		$conditions = array();
+
+		if (!empty($artistId)) {
+			$conditions = array(
+				'Album.artist_id' => $artistId
+			);
+		}
+
+		$this->paginate = array(
+			'contain' => array(
+				'Artist'
+			),
+			'conditions' => $conditions,
+			'cacher' => '+1 week',
+			'limit' => 1
+		);
+
+		$this->set('albums', $this->paginate($this->Album));
 	}
 
 }
@@ -56,7 +85,12 @@ class OtherBehavior extends ModelBehavior {
 
 class CacheBehaviorTestCase extends ControllerTestCase {
 
-	var $fixtures = array('plugin.cacher.cache_data', 'plugin.cacher.cache_data2');
+	var $fixtures = array(
+		'plugin.cacher.album',
+		'plugin.cacher.artist',
+		'plugin.cacher.cache_data',
+		'plugin.cacher.cache_data2'
+	);
 
 	function setUp() {
 		parent::setUp();
@@ -78,6 +112,60 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 	function tearDown() {
 		Cache::clear(false, 'default');
 		unset($this->CacheData);
+	}
+
+	function testCachePaginateWithContain() {
+		$this->testAction('/test_cacher/albums/page:1');
+
+		$result = Set::extract('/Artist/name', $this->vars['albums']);
+		$expected = array(
+			'Protest The Hero'
+		);
+		$this->assertEquals($expected, $result);
+
+		$this->testAction('/test_cacher/albums/page:2');
+
+		$result = Set::extract('/Artist/name', $this->vars['albums']);
+		$expected = array(
+			'The Dear Hunter'
+		);
+		$this->assertEquals($expected, $result);
+
+		ClassRegistry::init('Album')->delete(1);
+
+		$this->testAction('/test_cacher/albums/page:1');
+
+		$result = Set::extract('/Artist/name', $this->vars['albums']);
+		$expected = array(
+			'Protest The Hero'
+		);
+		$this->assertEquals($expected, $result);
+
+		$this->testAction('/test_cacher/albums/2/page:1');
+
+		$result = Set::extract('/Artist/name', $this->vars['albums']);
+		$expected = array(
+			'The Dear Hunter',
+		);
+		$this->assertEquals($expected, $result);
+
+		ClassRegistry::init('Album')->deleteAll(array(
+			'artist_id' => 2
+		), false);
+
+		$this->testAction('/test_cacher/albums/2/page:1');
+
+		$result = Set::extract('/Artist/name', $this->vars['albums']);
+		$expected = array(
+			'The Dear Hunter',
+		);
+		$this->assertEquals($expected, $result);
+
+		$this->testAction('/test_cacher/albums/2/page:1/sort:name/direction:asc');
+
+		$result = Set::extract('/Artist/name', $this->vars['albums']);
+		$expected = array();
+		$this->assertEquals($expected, $result);
 	}
 
 	function testCachePaginate() {
