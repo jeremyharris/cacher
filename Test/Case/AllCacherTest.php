@@ -1,8 +1,8 @@
 <?php
 /**
- * All  plugin tests
+ * All Cacher plugin tests
  */
-class AllTest extends CakeTestCase {
+class AllCacherTest extends CakeTestCase {
 
 /**
  * Suite define the tests for this plugin
@@ -10,7 +10,7 @@ class AllTest extends CakeTestCase {
  * @return void
  */
 	public static function suite() {
-		$suite = new CakeTestSuite('All  test');
+		$suite = new CakeTestSuite('All Cacher test');
 
 		$path = CakePlugin::path('Cacher') . 'Test' . DS . 'Case' . DS;
 		$suite->addTestDirectoryRecursive($path);
