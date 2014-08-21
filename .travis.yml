@@ -7,7 +7,7 @@ php:
 
 env:
   global:
-    - PLUGIN_NAME=Example
+    - PLUGIN_NAME=Cacher
     - REQUIRE=""
 
   matrix:
