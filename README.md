@@ -1,3 +1,6 @@
+[![build
+status](https://travis-ci.org/jeremyharris/cacher.svg?branch=master)](https://travis-ci.org/jeremyharris/cacher)
+
 # Cacher
 
 Cacher is a plugin for CakePHP that allows you to easily cache find results.
