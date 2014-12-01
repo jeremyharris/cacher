@@ -48,6 +48,7 @@ class CacheSourceTestCase extends CakeTestCase {
 	function tearDown() {
 		parent::tearDown();
 		Cache::clear(false, 'default');
+		ConnectionManager::drop('cacher');
 		unset($this->CacheData);
 		unset($this->dataSource);
 	}

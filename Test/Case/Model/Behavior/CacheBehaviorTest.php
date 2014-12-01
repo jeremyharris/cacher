@@ -76,7 +76,6 @@ class OtherBehavior extends ModelBehavior {
 		$ds = $Model->getDataSource($this->_dbconfig);
 		$this->_dbfields = $ds->fields($Model);
 		$this->_queryData = $queryData;
-		$this->_dbfulltablename = $ds->fullTableName($Model, true, false);
 		$queryData['conditions']['CacheData.name LIKE'] = '%thing%';
 		return $queryData;
 	}
@@ -94,6 +93,7 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 
 	function setUp() {
 		parent::setUp();
+
 		Configure::write('Cache.disable', false);
 		// set up default cache config for tests
 		Cache::config('default', array(
@@ -102,16 +102,16 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 			'prefix' => 'cacher_tests_',
 			'path' => CACHE
 		));
-	}
 
-	function startTest($method) {
 		$this->CacheData = ClassRegistry::init('CacheData');
 		$this->CacheData->Behaviors->attach('Cacher.Cache', array('clearOnDelete' => false, 'auto' => true, 'config' => 'default'));
 	}
 
 	function tearDown() {
 		Cache::clear(false, 'default');
+		ConnectionManager::drop('cacher');
 		unset($this->CacheData);
+		parent::tearDown();
 	}
 
 	function testCachePaginateWithContain() {
@@ -229,7 +229,6 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 		$results = $this->CacheData->find('all');
 		$this->assertEquals($this->CacheData->Behaviors->Other->_dbconfig, 'cacher');
 		$this->assertEquals(count($this->CacheData->Behaviors->Other->_dbfields), 5);
-		$this->assertEquals($this->CacheData->Behaviors->Other->_dbfulltablename, '`cache_datas`');
 		$results = Set::extract('/CacheData/name', $results);
 		$expected = array(
 			'A Cached Thing'
@@ -587,16 +586,16 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 
 	function testFindingOnMultipleDbConfigs() {
 		$testSuite = ConnectionManager::getDataSource('test');
-		ConnectionManager::create('test1', $testSuite->config);
-		ConnectionManager::create('test2', $testSuite->config);
+		ConnectionManager::create('cacher_test1', $testSuite->config);
+		ConnectionManager::create('cacher_test2', $testSuite->config);
 
 		$CacheData1 = ClassRegistry::init('CacheData');
 		$CacheData1->alias = 'CacheData1';
-		$CacheData1->useDbConfig = 'test1';
+		$CacheData1->useDbConfig = 'cacher_test1';
 		$CacheData1->Behaviors->attach('Cacher.Cache', array('auto' => true, 'clearOnDelete' => false));
 		$CacheData2 = ClassRegistry::init('CacheData2');
 		$CacheData2->alias = 'CacheData2';
-		$CacheData2->useDbConfig = 'test2';
+		$CacheData2->useDbConfig = 'cacher_test2';
 		$CacheData2->Behaviors->attach('Cacher.Cache', array('auto' => true, 'clearOnDelete' => false));
 
 		$count1 = $CacheData1->find('count');
@@ -606,8 +605,11 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 		$this->assertEquals($count1, $CacheData1->find('count'));
 		$this->assertEquals($count2, $CacheData2->find('count'));
 
-		$this->assertEquals($CacheData1->useDbConfig, 'test1');
-		$this->assertEquals($CacheData2->useDbConfig, 'test2');
+		$this->assertEquals($CacheData1->useDbConfig, 'cacher_test1');
+		$this->assertEquals($CacheData2->useDbConfig, 'cacher_test2');
+
+		ConnectionManager::drop('cacher_test1');
+		ConnectionManager::drop('cacher_test2');
 	}
 
 	function testSave() {
