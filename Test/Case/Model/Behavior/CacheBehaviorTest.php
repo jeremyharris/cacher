@@ -622,6 +622,40 @@ class CacheBehaviorTestCase extends ControllerTestCase {
 		$this->assertEquals($results['CacheData']['name'], 'Save me');
 	}
 
+	function testClearOnSaveField() {
+		$this->CacheData->Behaviors->attach('Cacher.Cache', array(
+			'clearOnSave' => true
+		));
+
+		// create cached values for this model
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			)
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'A Cached Thing',
+			'Cache behavior'
+		);
+		$this->assertEquals($results, $expected);
+
+		$this->CacheData->id = 1;
+		$this->CacheData->saveField('name', 'new name');
+
+		// test that it's not pulling from cache
+		$results = $this->CacheData->find('all', array(
+			'conditions' => array(
+				'CacheData.name LIKE' => '%cache%'
+			)
+		));
+		$results = Set::extract('/CacheData/name', $results);
+		$expected = array(
+			'Cache behavior'
+		);
+		$this->assertEquals($results, $expected);
+	}
+
 	function testUpdate() {
 		$data = $this->CacheData->read(null, 1);
 		$data['CacheData']['name'] = 'Updated';
