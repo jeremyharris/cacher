@@ -45,6 +45,8 @@ class CacheSource extends DataSource {
  * - other settings required by DataSource...
  *
  * @param array $config Configure options
+ * @throws CacheException missing datasource
+ * @throws CacheException missing cache config
  */
 	public function __construct($config = array()) {
 		$config = array_merge(array('config' => 'default'), $config);
@@ -79,9 +81,9 @@ class CacheSource extends DataSource {
  * Reads from cache if it exists. If not, it falls back to the original
  * datasource to retrieve the data and cache it for later
  *
- * @param Model $Model
- * @param array $queryData
- * @param integer $recursive
+ * @param Model   $Model     The calling model
+ * @param array   $queryData the query
+ * @param integer $recursive if recursive
  * @return array Results
  * @see DataSource::read()
  */
@@ -92,7 +94,7 @@ class CacheSource extends DataSource {
 		if ($results === false) {
 			$results = $this->source->read($Model, $queryData, $recursive);
 			// compress before storing
-			if (isset($this->config['gzip'])) {
+			if (!empty($this->config['gzip'])) {
 				Cache::write($key, gzcompress(serialize($results)), $this->config['config']);
 			} else {
 				Cache::write($key, $results, $this->config['config']);
@@ -100,19 +102,20 @@ class CacheSource extends DataSource {
 			$this->_map($Model, $key);
 		} else {
 			// uncompress data from cache
-			if (isset($this->config['gzip'])) {
+			if (!empty($this->config['gzip'])) {
 				$results = unserialize(gzuncompress($results));
 			}
 		}
 		return $results;
 	}
 
-/*
+/**
  * Clears the cache for a specific model and rewrites the map. Pass query to
  * clear a specific query's cached results
  *
- * @param array $query If null, clears all for this model
  * @param Model $Model The model to clear the cache for
+ * @param array $query If null, clears all for this model
+ * @return void
  */
 	public function clearModelCache(Model $Model, $query = null) {
 		$map = Cache::read('map', $this->config['config']);
@@ -120,7 +123,7 @@ class CacheSource extends DataSource {
 		$keys = array();
 		if ($query !== null) {
 			$keys = array($this->_key($Model, $query));
-		} else{
+		} else {
 			if (!empty($map[$this->source->configKeyName]) && !empty($map[$this->source->configKeyName][$Model->alias])) {
 				$keys = $map[$this->source->configKeyName][$Model->alias];
 			}
@@ -152,17 +155,21 @@ class CacheSource extends DataSource {
 			),
 			(array)$query
 		);
-		$gzip = (isset($this->config['gzip'])) ? '_gz' : '';
+		$gzip = "";
+		if (!empty($this->config['gzip'])) {
+			$gzip = "_gz";
+		}
 		$queryHash = md5(serialize($query));
 		$sourceName = $this->source->configKeyName;
-		return Inflector::underscore($sourceName).'_'.Inflector::underscore($Model->alias).'_'.$queryHash.$gzip;
+		return Inflector::underscore($sourceName) . '_' . Inflector::underscore($Model->alias) . '_' . $queryHash . $gzip;
 	}
 
 /**
  * Creates a cache map (used for deleting cache keys or groups)
  *
- * @param Model $Model
- * @param string $key
+ * @param Model  $Model The Model being passed
+ * @param string $key   the cache key
+ * @return void
  */
 	protected function _map(Model $Model, $key) {
 		$map = Cache::read('map', $this->config['config']);
@@ -196,7 +203,7 @@ class CacheSource extends DataSource {
  * Since Datasource has the method `describe()`, it won't be caught `__call()`.
  * This ensures it is called on the original datasource properly.
  *
- * @param mixed $model
+ * @param mixed $model the model
  * @return mixed
  */
 	public function describe($model) {
