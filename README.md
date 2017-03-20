@@ -17,14 +17,14 @@ results? Use Cacher!
 
 ## Usage
 
-    var $actsAs = array(
+    public $actsAs = array(
         'Cacher.Cache'
     );
 
 By default, Cacher uses the 'default' cache configuration in your core.php file.
 If you want to use a different configuration, just pass it in the 'config' key.
 
-    var $actsAs = array(
+    public $actsAs = array(
         'Cacher.Cache' => array(
             'config' => 'myCacheConfiguration'
         )
